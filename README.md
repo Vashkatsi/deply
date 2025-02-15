@@ -446,7 +446,7 @@ A plan to evolve Deply into a must-have architectural guardian for Python projec
   🔲 GitHub Actions/GitLab CI templates  
   🔲 `# deply:ignore` suppression comments  
   🔲 Config validation command (`deply validate`)  
-  🔲 Parallel file analysis  
+  ✅ Parallel file analysis  
   🔲 Dependency graph caching  
   🔲 Python plugin system for custom rules/collectors  
   🔲 FastAPI/Django/Flask presets  
