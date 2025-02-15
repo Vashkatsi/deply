@@ -429,11 +429,35 @@ architectural integrity and prevent unwanted dependencies and naming patterns.
 To test the tool, use `unittest`:
 
 ```bash
-python -m unittest discover tests
+ python -m unittest discover tests
 ```
 
+
+Here's a polished roadmap for your README:
+
+---
+
+# Deply Roadmap 🚀
+
+A plan to evolve Deply into a must-have architectural guardian for Python projects.  
+*Contributions and suggestions are welcome!*
+
+  🔲 Interactive config setup (`deply init` wizard)  
+  🔲 GitHub Actions/GitLab CI templates  
+  🔲 `# deply:ignore` suppression comments  
+  🔲 Config validation command (`deply validate`)  
+  🔲 Parallel file analysis  
+  🔲 Dependency graph caching  
+  🔲 Python plugin system for custom rules/collectors  
+  🔲 FastAPI/Django/Flask presets  
+  🔲 Third-party import restrictions (`disallow_external_imports`)  
+
+---
+    
 Feel free to contribute to this roadmap or suggest features by opening an issue or submitting a pull request! Together,
 we can make Deply a powerful tool for the Python community. 😊
+
+---
 
 ## License
 
