@@ -1,5 +1,6 @@
 import argparse
 import ast
+import concurrent.futures
 import logging
 import re
 import sys
@@ -15,6 +16,22 @@ from .config_parser import ConfigParser
 from .models.code_element import CodeElement
 from .models.layer import Layer
 from .models.violation import Violation
+
+
+def process_file(file_path: Path, layer_collectors):
+    results = []
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            file_content = f.read()
+        file_ast = ast.parse(file_content, filename=str(file_path))
+    except Exception as ex:
+        logging.debug(f"Skipping file {file_path} due to parse error: {ex}")
+        return results
+    for layer_name, collector in layer_collectors:
+        matched_elements = collector.match_in_file(file_ast, file_path)
+        for element in matched_elements:
+            results.append((layer_name, element))
+    return results
 
 
 def main():
@@ -112,19 +129,13 @@ def main():
         layers[layer_name] = Layer(name=layer_name, code_elements=set(), dependencies=set())
 
     code_element_to_layer: dict[CodeElement, str] = {}
-    logging.info("Collecting code elements for each layer...")
-    for file_path in all_files:
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                file_content = f.read()
-            file_ast = ast.parse(file_content, filename=str(file_path))
-        except Exception as ex:
-            logging.debug(f"Skipping file {file_path} due to parse error: {ex}")
-            continue
+    logging.info("Collecting code elements for each layer (parallel)...")
 
-        for layer_name, collector in layer_collectors:
-            matched_elements = collector.match_in_file(file_ast, file_path)
-            for element in matched_elements:
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = [executor.submit(process_file, file_path, layer_collectors) for file_path in all_files]
+        for future in concurrent.futures.as_completed(futures):
+            file_results = future.result()
+            for layer_name, element in file_results:
                 layers[layer_name].code_elements.add(element)
                 code_element_to_layer[element] = layer_name
 
