@@ -123,6 +123,7 @@ By default, Deply looks for a configuration file named `deply.yaml` in the curre
     - `--output`: Output file for the report. If not specified, the report is printed to the console.
     - `--mermaid`: Generates a Mermaid diagram of your layer dependencies, printing it to the console at the end of the analysis. Any edges that represent a violation are shown in red.
     - `--max-violations`: Maximum number of allowed violations before failing the analysis. Default is 0 (no violations allowed).
+    - `--parallel`: Enable parallel processing of code elements. If no number is provided, all available CPU cores will be used.
 - `-h`, `--help`: Displays help information about Deply and its commands.
 
 #### Examples
