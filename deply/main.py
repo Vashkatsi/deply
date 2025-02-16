@@ -30,6 +30,17 @@ def main():
         help="Maximum number of allowed violations before failing"
     )
 
+    parser_analyze.add_argument(
+        '--parallel',
+        type=int,
+        nargs='?',
+        default=None,
+        const=0,
+        help="Enable parallel processing of code elements. "
+             "Optionally specify the number of processes to use. "
+             "If no number is provided, all available CPU cores will be used."
+    )
+
     args = parser.parse_args()
 
     if args.version:

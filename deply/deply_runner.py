@@ -1,3 +1,4 @@
+import os
 import ast
 import concurrent.futures
 import logging
@@ -31,6 +32,17 @@ class DeplyRunner:
         self.violations: set[Violation] = set()
         self.metrics = {'total_dependencies': 0}
         self.mermaid_builder = MermaidDiagramBuilder()
+        self.workers_count = 1
+
+    def _get_workers_count(self) -> int:
+        if self.args.parallel is None:
+            return 1
+
+        available_workers = os.cpu_count()
+
+        if self.args.parallel == 0:
+            return available_workers
+        return min(available_workers, self.args.parallel)
 
     def load_configuration(self):
         config_path = Path(self.args.config)
@@ -40,6 +52,7 @@ class DeplyRunner:
         self.exclude_files = [re.compile(pattern) for pattern in self.config["exclude_files"]]
         self.layers_config = self.config["layers"]
         self.ruleset = self.config["ruleset"]
+        self.workers_count = self._get_workers_count()
 
     def map_layer_collectors(self):
         logging.info("Mapping layer collectors...")
@@ -72,23 +85,36 @@ class DeplyRunner:
             self.all_files.extend(filtered_files)
 
     def collect_code_elements(self):
-        logging.info("Collecting code elements for each layer (parallel)...")
+        logging.info(
+            f"Collecting code elements for each layer with {self.workers_count} workers..."
+        )
         # Initialize layers
         for layer_config in self.layers_config:
             layer_name = layer_config["name"]
             self.layers[layer_name] = Layer(name=layer_name, code_elements=set(), dependencies=set())
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            futures = [
-                executor.submit(process_file, file_path, self.layer_collectors)
-                for file_path in self.all_files
-            ]
-            for future in concurrent.futures.as_completed(futures):
-                file_results = future.result()
+
+        if self.workers_count > 1:
+            with concurrent.futures.ProcessPoolExecutor(max_workers=self.workers_count) as executor:
+                futures = [
+                    executor.submit(process_file, file_path, self.layer_collectors)
+                    for file_path in self.all_files
+                ]
+                for future in concurrent.futures.as_completed(futures):
+                    file_results = future.result()
+                    for layer_name, element in file_results:
+                        self.layers[layer_name].code_elements.add(element)
+                        self.code_element_to_layer[element] = layer_name
+        else:
+            for file_path in self.all_files:
+                file_results = process_file(file_path, self.layer_collectors)
                 for layer_name, element in file_results:
                     self.layers[layer_name].code_elements.add(element)
                     self.code_element_to_layer[element] = layer_name
+
         for layer_name, layer in self.layers.items():
-            logging.info(f"Layer '{layer_name}' collected {len(layer.code_elements)} code elements.")
+            logging.info(
+                f"Layer '{layer_name}' collected {len(layer.code_elements)} code elements."
+            )
 
     def prepare_rules(self):
         logging.info("Preparing rules...")
@@ -119,7 +145,9 @@ class DeplyRunner:
             dependency_handler=dependency_handler
         )
         analyzer.analyze()
-        logging.info(f"Analysis complete. Found {self.metrics['total_dependencies']} dependencies(s).")
+        logging.info(
+            f"Analysis complete. Found {self.metrics['total_dependencies']} dependencies(s)."
+        )
 
     def run_element_based_checks(self):
         logging.info("Running element-based checks ...")
