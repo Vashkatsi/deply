@@ -39,10 +39,10 @@ class DeplyRunner:
             return 1
 
         available_workers = os.cpu_count()
-        return (
-            min(available_workers, self.args.parallel) if self.args.parallel > 0
-            else available_workers
-        )
+
+        if self.args.parallel == 0:
+            return available_workers
+        return min(available_workers, self.args.parallel)
 
     def load_configuration(self):
         config_path = Path(self.args.config)

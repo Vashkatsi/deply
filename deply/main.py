@@ -35,6 +35,7 @@ def main():
         type=int,
         nargs='?',
         default=None,
+        const=0,
         help="Enable parallel processing of code elements. "
              "Optionally specify the number of processes to use. "
              "If no number is provided, all available CPU cores will be used."
