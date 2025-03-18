@@ -95,11 +95,11 @@ jobs:
           sed -i "s/stable-v[0-9\.]\+/stable-v${NEW_VERSION}/" README.md
           # Update coverage badge: matches "coverage-[0-9]*%" and replaces with new coverage percent
           sed -i "s/coverage-[0-9]\+%/coverage-${NEW_COVERAGE}%/" README.md
-          cat README.md
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b temp-branch
           git add deply/__init__.py
+          git add README.md
           git commit -m "Update version and README badges"
           git push origin temp-branch:main
 
