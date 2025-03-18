@@ -1,9 +1,9 @@
 # Deply - <em>keep your python architecture clean</em>
 
-![Static Badge](https://img.shields.io/badge/stable-v0.6.1-319cd2)
+![Static Badge](https://img.shields.io/badge/stable-v0.7.0-319cd2)
 ![Static Badge](https://img.shields.io/badge/downloads->2_k_month-2282c2)
 ![Static Badge](https://img.shields.io/badge/test-passing-98c525)
-![Static Badge](https://img.shields.io/badge/coverage-99%25-98c525)
+![Static Badge](https://img.shields.io/badge/coverage-81%25-98c525)
 ![Static Badge](https://img.shields.io/badge/python-3.8_|_3.9_|3.10_|_3.11_|_3.12-98c525)
 
 ---
@@ -313,6 +313,65 @@ Collects code elements from files matching a specified regular expression.
   element_type: "class"
 ```
 
+#### **CustomCollector**
+
+Extend Deply's capabilities with domain-specific collection logic:
+
+- **Configuration Options**:
+    - `type`: `"file_regex"`
+    - `regex`: Regular expression to match file paths.
+    - `element_type` (optional): Type of code elements to collect (`"class"`, `"function"`, `"variable"`).
+    - `exclude_files_regex` (optional): Regular expression to exclude certain files.
+
+**Example**:
+
+```yaml
+- type: custom
+  class: "security_plugins.RiskyFunctionsCollector"
+  params:
+    risky_patterns: ["^handle_password", "_auth$"]
+```
+
+##### Implementation Example:
+```python
+import re
+from pathlib import Path
+import ast
+from typing import Set
+from deply.collectors import BaseCollector
+from deply.models.code_element import CodeElement
+
+class RiskyFunctionsCollector(BaseCollector):
+    def __init__(self, config: dict):
+        self.patterns = [re.compile(p) for p in config["params"]["risky_patterns"]]
+        self.excluded_files = config["exclude_files"]
+
+    def match_in_file(self, file_ast: ast.AST, file_path: Path) -> Set[CodeElement]:
+        elements = set()
+        if any(p.search(str(file_path)) for p in self.excluded_files):
+            return elements
+
+        for node in ast.walk(file_ast):
+            if isinstance(node, ast.FunctionDef):
+                if any(p.search(node.name) for p in self.patterns):
+                    elements.add(CodeElement(
+                        file=file_path,
+                        name=node.name,
+                        element_type="function",
+                        line=node.lineno
+                    ))
+        return elements
+```
+
+**Requirements**:
+1. Inherit from `BaseCollector`
+2. Implement `__init__` (receives config dict) and `match_in_file` methods
+3. Access configuration through:
+    - `config["params"]`: Your custom parameters
+    - `config["paths"]`: Project paths analyzed
+    - `config["exclude_files"]`: Exclusion patterns
+
+
 ### Rules
 
 Rules define the architectural constraints and standards that your layers must adhere to. By default, Deply supports a
@@ -448,8 +507,9 @@ A plan to evolve Deply into a must-have architectural guardian for Python projec
   🔲 `# deply:ignore` suppression comments  
   🔲 Config validation command (`deply validate`)  
   ✅ Parallel file analysis  
+  ✅ Custom collectors system
   🔲 Dependency graph caching  
-  🔲 Python plugin system for custom rules/collectors  
+  🔲 Custom rules system
   🔲 FastAPI/Django/Flask presets  
   🔲 Third-party import restrictions (`disallow_external_imports`)  
 
