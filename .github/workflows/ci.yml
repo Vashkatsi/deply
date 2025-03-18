@@ -31,6 +31,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     needs: build
+    outputs:
+      coverage: ${{ steps.run_tests.outputs.coverage }}
 
     steps:
       - uses: actions/checkout@v3
@@ -47,10 +49,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install coverage
 
-      - name: Run tests
+      - name: Run tests with coverage
+        id: run_tests
         run: |
-          python -m unittest discover tests
+          coverage run --source=deply -m unittest discover tests
+          coverage report -m | tee coverage.txt
+          TOTAL_COVERAGE=$(tail -n 1 coverage.txt | awk '{print $NF}' | sed 's/%//')
+          echo "Total coverage is ${TOTAL_COVERAGE}%"
+          echo "coverage=${TOTAL_COVERAGE}" >> $GITHUB_OUTPUT
 
   publish:
     runs-on: ubuntu-latest
@@ -73,15 +81,26 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
 
-      - name: Update version in setup.py
+      - name: Update version and README badges
         run: |
           TAG_NAME="${GITHUB_REF#refs/tags/v}"
           sed -i "s/__version__ = .*/__version__ = '${TAG_NAME}'/" deply/__init__.py
+          echo "Updated version in deply/__init__.py to ${TAG_NAME}"
+          # Get the new version from deply/__init__.py
+          NEW_VERSION=$(sed -n "s/__version__ = '\(.*\)'/\1/p" deply/__init__.py)
+          # Get the coverage percent from the test job output
+          NEW_COVERAGE=${{ needs.test.outputs.coverage }}
+          echo "Updating README badges with version ${NEW_VERSION} and coverage ${NEW_COVERAGE}%"
+          # Update stable badge: matches "stable-v*" and replaces with new version badge
+          sed -i "s/stable-v[0-9\.]\+/stable-v${NEW_VERSION}/" README.md
+          # Update coverage badge: matches "coverage-[0-9]*%" and replaces with new coverage percent
+          sed -i "s/coverage-[0-9]\+%/coverage-${NEW_COVERAGE}%/" README.md
+          cat README.md
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b temp-branch
           git add deply/__init__.py
-          git commit -m "Update version to ${TAG_NAME} from tag ${GITHUB_REF}"
+          git commit -m "Update version and README badges"
           git push origin temp-branch:main
 
       - name: Publish to PyPI
