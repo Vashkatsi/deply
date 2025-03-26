@@ -545,7 +545,7 @@ A plan to evolve Deply into a must-have architectural guardian for Python projec
 
   🔲 Interactive config setup (`deply init` wizard)  
   🔲 GitHub Actions/GitLab CI templates  
-  🔲 `# deply:ignore` suppression comments  
+  ✅ `# deply:ignore` suppression comments  
   🔲 Config validation command (`deply validate`)  
   ✅ Parallel file analysis  
   ✅ Custom collectors system
