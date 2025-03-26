@@ -484,6 +484,47 @@ By mixing and matching these rules, you can enforce your architectural guideline
 and component adheres to the desired standards. As your project evolves, you can refine or add rules to maintain
 architectural integrity and prevent unwanted dependencies and naming patterns.
 
+## Error Suppression
+
+Deply provides flexible options to suppress architectural rule violations, giving you granular control over which checks to ignore. Use descriptive rule names (like `DISALLOW_LAYER_DEPENDENCIES` or `ENFORCE_INHERITANCE`) that align with your `deply.yaml` configuration keys.
+
+### 1. Line-Level Suppression
+
+Ignore violations for **specific rules** or **all rules** on a single line.
+
+#### Examples:
+
+- **Ignore a single rule:**
+  ```python
+  user.get()  # deply:ignore:DISALLOW_LAYER_DEPENDENCIES
+  ```
+
+- **Ignore multiple rules (comma-separated):**
+  ```python
+  user.get()  # deply:ignore:DISALLOW_LAYER_DEPENDENCIES,ENFORCE_INHERITANCE
+  ```
+
+- **Ignore all rules on the line:**
+  ```python
+  user.get()  # deply:ignore
+  ```
+
+### 2. File-Level Suppression
+
+Suppress rules **globally for an entire file**. Place these directives at the top of your file.
+
+#### Examples:
+
+- **Ignore a specific rule for the entire file:**
+  ```python
+  # deply:ignore-file:ENFORCE_INHERITANCE
+  ```
+
+- **Ignore all Deply rules for the entire file:**
+  ```python
+  # deply:ignore-file
+  ```
+
 ## Running Tests
 
 To test the tool, use `unittest`:

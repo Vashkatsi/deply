@@ -1,7 +1,7 @@
-import os
 import ast
 import concurrent.futures
 import logging
+import os
 import re
 from pathlib import Path
 
@@ -14,6 +14,7 @@ from deply.models.layer import Layer
 from deply.models.violation import Violation
 from deply.reports.report_generator import ReportGenerator
 from deply.rules import RuleFactory
+from deply.utils.ignore_parser import parse_ignore_comments, ALL_SUPPRESSION_RULES
 
 
 class DeplyRunner:
@@ -33,6 +34,7 @@ class DeplyRunner:
         self.metrics = {'total_dependencies': 0}
         self.mermaid_builder = MermaidDiagramBuilder()
         self.workers_count = 1
+        self.ignore_maps = {}
 
     def _get_workers_count(self) -> int:
         if self.args.parallel is None:
@@ -100,13 +102,15 @@ class DeplyRunner:
                     for file_path in self.all_files
                 ]
                 for future in concurrent.futures.as_completed(futures):
-                    file_results = future.result()
+                    file_path_str, file_results, ignore_map = future.result()
+                    self.ignore_maps[file_path_str] = ignore_map
                     for layer_name, element in file_results:
                         self.layers[layer_name].code_elements.add(element)
                         self.code_element_to_layer[element] = layer_name
         else:
             for file_path in self.all_files:
-                file_results = process_file(file_path, self.layer_collectors)
+                file_path_str, file_results, ignore_map = process_file(file_path, self.layer_collectors)
+                self.ignore_maps[file_path_str] = ignore_map
                 for layer_name, element in file_results:
                     self.layers[layer_name].code_elements.add(element)
                     self.code_element_to_layer[element] = layer_name
@@ -119,6 +123,23 @@ class DeplyRunner:
     def prepare_rules(self):
         logging.info("Preparing rules...")
         self.rules = RuleFactory.create_rules(self.ruleset)
+
+    def is_violation_suppressed(self, violation: Violation) -> bool:
+        file_key = str(violation.file)
+        ignore_map = self.ignore_maps.get(file_key, {"file": set(), "lines": {}})
+        # Check file-level suppression
+        if (
+                ALL_SUPPRESSION_RULES in ignore_map.get("file", set())
+                or violation.violation_type.code.upper() in ignore_map.get("file", set())
+        ):
+            return True
+
+        # Check line-level suppression
+        line_rules = ignore_map.get("lines", {}).get(violation.line, set())
+        if ALL_SUPPRESSION_RULES in line_rules or violation.violation_type.code.upper() in line_rules:
+            return True
+
+        return False
 
     def analyze_dependencies(self):
         def dependency_handler(dependency):
@@ -134,7 +155,7 @@ class DeplyRunner:
             has_violation = False
             for rule in self.rules:
                 violation = rule.check(source_layer, target_layer, dependency)
-                if violation:
+                if violation and not self.is_violation_suppressed(violation):
                     self.violations.add(violation)
                     has_violation = True
             self.mermaid_builder.add_edge(source_layer, target_layer, has_violation)
@@ -154,9 +175,9 @@ class DeplyRunner:
         for layer_name, layer in self.layers.items():
             for element in layer.code_elements:
                 for rule in self.rules:
-                    v = rule.check_element(layer_name, element)
-                    if v:
-                        self.violations.add(v)
+                    violation_candidate = rule.check_element(layer_name, element)
+                    if violation_candidate and not self.is_violation_suppressed(violation_candidate):
+                        self.violations.add(violation_candidate)
 
     def generate_report(self):
         logging.info("Generating report...")
@@ -191,15 +212,21 @@ class DeplyRunner:
 
 def process_file(file_path: Path, layer_collectors):
     results = []
+    ignore_map = {"file": set(), "lines": {}}
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             file_content = f.read()
+        file_bytes = file_content.encode("utf-8")
         file_ast = ast.parse(file_content, filename=str(file_path))
     except Exception as ex:
         logging.debug(f"Skipping file {file_path} due to parse error: {ex}")
-        return results
+        return (str(file_path), results, ignore_map)
+
+    # Parse ignore directives from the already-read file content
+    ignore_map = parse_ignore_comments(file_path, file_bytes=file_bytes)
+
     for layer_name, collector in layer_collectors:
         matched_elements = collector.match_in_file(file_ast, file_path)
         for element in matched_elements:
             results.append((layer_name, element))
-    return results
+    return (str(file_path), results, ignore_map)
