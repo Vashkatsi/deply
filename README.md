@@ -543,14 +543,15 @@ Here's a polished roadmap for your README:
 A plan to evolve Deply into a must-have architectural guardian for Python projects.  
 *Contributions and suggestions are welcome!*
 
+  🔲 Skip violations `skip_violations`  
   🔲 Interactive config setup (`deply init` wizard)  
   🔲 GitHub Actions/GitLab CI templates  
   ✅ `# deply:ignore` suppression comments  
   🔲 Config validation command (`deply validate`)  
   ✅ Parallel file analysis  
-  ✅ Custom collectors system
+  ✅ Custom collectors system  
   🔲 Dependency graph caching  
-  🔲 Custom rules system
+  🔲 Custom rules system  
   🔲 FastAPI/Django/Flask presets  
   🔲 Third-party import restrictions (`disallow_external_imports`)  
 
