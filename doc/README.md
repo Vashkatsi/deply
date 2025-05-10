@@ -1,3 +1,9 @@
+---
+layout: default
+title: Documentation Home
+nav_exclude: true
+---
+
 # Deply Documentation
 
 Welcome to the Deply documentation! This documentation will help you understand and use Deply effectively.

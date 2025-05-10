@@ -1,6 +1,8 @@
 ---
 layout: default
-title: Deply Documentation
+title: Home
+nav_order: 1
+permalink: /
 ---
 
 # Deply Documentation
