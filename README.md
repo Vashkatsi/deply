@@ -134,12 +134,12 @@ A plan to evolve Deply into a must-have architectural guardian for Python projec
   🔲 Third-party import restrictions (`disallow_external_imports`)  
 
 ## Further Documentation
-- [Core Concepts](https://vashkatsi.github.io/deply/doc/features.md) - Explains layers, rules and violations in more details.
-- [Configuration](https://vashkatsi.github.io/deply/doc/configuration.md) - Reference for all available settings in a depfile
-- [Collectors](https://vashkatsi.github.io/deply/doc/collectors.md) - Reference for which collectors are available in Deply to define your layers.
-- [Rules](https://vashkatsi.github.io/deply/doc/rules.md) - Lists the different rule types supported by Deply
-- [Mermaid Diagrams](https://vashkatsi.github.io/deply/doc/mermaid.md) - Overview of the diagram generation capabilities
-- [Command Line Interface](https://vashkatsi.github.io/deply/doc/cli.md) - Advice for using the CLI
+- [Core Concepts](https://vashkatsi.github.io/deply/doc/features.html) - Explains layers, rules and violations in more details.
+- [Configuration](https://vashkatsi.github.io/deply/doc/configuration.html) - Reference for all available settings in a depfile
+- [Collectors](https://vashkatsi.github.io/deply/doc/collectors.html) - Reference for which collectors are available in Deply to define your layers.
+- [Rules](https://vashkatsi.github.io/deply/doc/rules.html) - Lists the different rule types supported by Deply
+- [Mermaid Diagrams](https://vashkatsi.github.io/deply/doc/mermaid.html) - Overview of the diagram generation capabilities
+- [Command Line Interface](https://vashkatsi.github.io/deply/doc/cli.html) - Advice for using the CLI
 
 ## License
 

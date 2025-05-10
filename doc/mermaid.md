@@ -61,4 +61,4 @@ The Mermaid diagrams can be:
 - Used in documentation
 - Shared with team members
 
-For more information about using Deply's analysis features, please refer to the [Command Line Interface](cli.md) documentation. 
+For more information about using Deply's analysis features, please refer to the [Command Line Interface](cli.html) documentation.

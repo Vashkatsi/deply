@@ -54,4 +54,4 @@ deply:
         - models
 ```
 
-For more detailed configuration options and examples, please refer to the [Configuration Guide](configuration.md). 
+For more detailed configuration options and examples, please refer to the [Configuration Guide](configuration.html).

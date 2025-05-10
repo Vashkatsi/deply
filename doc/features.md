@@ -39,4 +39,4 @@ Deply is designed to be highly configurable and extensible:
 4. **Documentation**: Automatically document your project's architecture
 5. **Quality Control**: Catch architectural violations early in the development process
 
-For detailed information about implementing these features, please refer to the [Configuration Guide](configuration.md) and [Collectors Reference](collectors.md). 
+For detailed information about implementing these features, please refer to the [Configuration Guide](configuration.html) and [Collectors Reference](collectors.html).

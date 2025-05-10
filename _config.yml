@@ -1,7 +1,24 @@
 # Jekyll configuration for GitHub Pages
 title: Deply Documentation
 description: Documentation for Deply - A Python tool for enforcing architectural patterns and dependencies
-theme: jekyll-theme-cayman
+remote_theme: just-the-docs/just-the-docs
+
+# Color scheme supports "light" (default) and "dark"
+color_scheme: light
+
+# Enable or disable the site search
+search_enabled: true
+
+# Aux links for the upper right navigation
+aux_links:
+  "Deply on GitHub":
+    - "https://github.com/vashkatsi/deply"
+
+# Makes Aux links open in a new tab
+aux_links_new_tab: true
+
+# Sort order for navigation links
+nav_sort: case_sensitive # Capital letters sorted before lowercase
 
 # Show excerpts on the home page
 show_excerpts: true

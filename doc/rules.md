@@ -107,4 +107,4 @@ When rules are violated, Deply will report them in the following format:
 /path/to/file.py:line_number - Layer 'layer_name' is not allowed to depend on layer 'other_layer'
 ```
 
-For more information about configuring rules, please refer to the [Configuration Guide](configuration.md). 
+For more information about configuring rules, please refer to the [Configuration Guide](configuration.html).

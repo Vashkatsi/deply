@@ -100,6 +100,6 @@ The JSON format provides structured data that can be easily parsed by other tool
 The HTML format provides a formatted report that can be viewed in a web browser, with syntax highlighting and better readability.
 
 For more information about:
-- Mermaid diagrams, see the [Mermaid Diagrams](mermaid.md) documentation
-- Rules and violations, see the [Rules](rules.md) documentation
-- Configuration and usage, see the [Configuration Guide](configuration.md) and [Getting Started](getting-started.md) guide 
+- Mermaid diagrams, see the [Mermaid Diagrams](mermaid.html) documentation
+- Rules and violations, see the [Rules](rules.html) documentation
+- Configuration and usage, see the [Configuration Guide](configuration.html) and [Getting Started](getting-started.html) guide

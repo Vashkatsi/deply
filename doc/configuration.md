@@ -62,7 +62,7 @@ ruleset:
 
 ### Collectors
 
-Collectors define how code elements are collected into layers. See the [Collectors Reference](collectors.md) for detailed information about each collector type.
+Collectors define how code elements are collected into layers. See the [Collectors Reference](collectors.html) for detailed information about each collector type.
 
 ## Advanced Configuration Examples
 
@@ -103,4 +103,4 @@ ruleset:
 4. Document your layer dependencies and rules
 5. Regularly review and update your configuration as your project evolves
 
-For more detailed information about collectors and their configuration options, please refer to the [Collectors Reference](collectors.md). 
+For more detailed information about collectors and their configuration options, please refer to the [Collectors Reference](collectors.html).
