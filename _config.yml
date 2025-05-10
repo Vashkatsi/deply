@@ -1,0 +1,31 @@
+# Jekyll configuration for GitHub Pages
+title: Deply Documentation
+description: Documentation for Deply - A Python tool for enforcing architectural patterns and dependencies
+theme: jekyll-theme-cayman
+
+# Show excerpts on the home page
+show_excerpts: true
+
+# Set the base URL for the site
+baseurl: ""
+
+# Set the URL for the site
+url: ""
+
+# Include the doc directory
+include:
+  - "doc"
+
+# Set the default layout for pages
+defaults:
+  -
+    scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "default"
+  -
+    scope:
+      path: "doc"
+    values:
+      layout: "default"
