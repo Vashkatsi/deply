@@ -7,10 +7,10 @@ theme: jekyll-theme-cayman
 show_excerpts: true
 
 # Set the base URL for the site
-baseurl: ""
+baseurl: "/deply"
 
 # Set the URL for the site
-url: ""
+url: "https://vashkatsi.github.io"
 
 # Include the doc directory
 include:

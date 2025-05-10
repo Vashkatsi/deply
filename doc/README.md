@@ -4,42 +4,42 @@ Welcome to the Deply documentation! This documentation will help you understand 
 
 ## Table of Contents
 
-1. [Getting Started](getting-started.md)
+1. [Getting Started]({{ site.baseurl }}/doc/getting-started.md)
    - Installation
    - Basic Usage
    - Configuration
 
-2. [Features](features.md)
+2. [Features]({{ site.baseurl }}/doc/features.md)
    - Layer-Based Analysis
    - Dynamic Layer Configuration
    - Cross-Layer Dependency Rules
    - Extensibility
 
-3. [Configuration Guide](configuration.md)
+3. [Configuration Guide]({{ site.baseurl }}/doc/configuration.md)
    - Configuration File Structure
    - Layer Definitions
    - Rules and Collectors
    - Examples
 
-4. [Collectors Reference](collectors.md)
+4. [Collectors Reference]({{ site.baseurl }}/doc/collectors.md)
    - BoolCollector
    - ClassInheritsCollector
    - ClassNameRegexCollector
    - FunctionNameRegexCollector
 
-5. [Rules](rules.md)
+5. [Rules]({{ site.baseurl }}/doc/rules.md)
    - Rule Types
    - Rule Configuration
    - Common Patterns
    - Best Practices
 
-6. [Mermaid Diagrams](mermaid.md)
+6. [Mermaid Diagrams]({{ site.baseurl }}/doc/mermaid.md)
    - Generating Diagrams
    - Diagram Elements
    - Example Diagrams
    - Best Practices
 
-7. [Command Line Interface](cli.md)
+7. [Command Line Interface]({{ site.baseurl }}/doc/cli.md)
    - Available Commands
    - Command Line Arguments
    - Output Formats

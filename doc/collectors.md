@@ -92,4 +92,4 @@ Collects functions whose names match a specified regular expression.
 4. Keep collector configurations as simple as possible
 5. Document complex collector configurations
 
-For more information about using collectors in your configuration, please refer to the [Configuration Guide](configuration.md). 
+For more information about using collectors in your configuration, please refer to the [Configuration Guide]({{ site.baseurl }}/doc/configuration.md).

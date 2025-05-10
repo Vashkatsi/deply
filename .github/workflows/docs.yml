@@ -7,6 +7,7 @@ on:
       - 'doc/**'
       - '.github/workflows/docs.yml'
       - '_config.yml'
+      - 'index.md'
 
 jobs:
   build-and-deploy:
