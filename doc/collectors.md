@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Collectors
+nav_order: 5
 ---
 
 # Collectors Reference

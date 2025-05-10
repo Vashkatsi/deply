@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Rules
+nav_order: 6
 ---
 
 # Rules in Deply

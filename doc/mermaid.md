@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Mermaid Diagrams
+nav_order: 7
 ---
 
 # Mermaid Diagrams in Deply
