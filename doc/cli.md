@@ -1,3 +1,8 @@
+---
+layout: default
+title: CLI
+---
+
 # Command Line Interface
 
 This document describes the command-line interface of Deply.

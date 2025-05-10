@@ -1,3 +1,8 @@
+---
+layout: default
+title: Features
+---
+
 # Deply Features
 
 Deply provides several powerful features to help you maintain clean architecture in your Python projects.

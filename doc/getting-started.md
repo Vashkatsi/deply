@@ -1,3 +1,8 @@
+---
+layout: default
+title: Getting Started
+---
+
 # Getting Started with Deply
 
 This guide will help you get up and running with Deply quickly.

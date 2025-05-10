@@ -1,3 +1,8 @@
+---
+layout: default
+title: Configuration
+---
+
 # Configuration Guide
 
 This guide explains how to configure Deply for your project.

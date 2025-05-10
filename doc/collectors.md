@@ -1,3 +1,8 @@
+---
+layout: default
+title: Collectors
+---
+
 # Collectors Reference
 
 This document provides detailed information about the different types of collectors available in Deply.

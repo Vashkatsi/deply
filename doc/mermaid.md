@@ -1,3 +1,8 @@
+---
+layout: default
+title: Mermaid Diagrams
+---
+
 # Mermaid Diagrams in Deply
 
 Deply can generate Mermaid diagrams to visualize your project's layer dependencies. This feature helps you understand the relationships between different layers in your architecture.

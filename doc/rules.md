@@ -1,3 +1,8 @@
+---
+layout: default
+title: Rules
+---
+
 # Rules in Deply
 
 Rules in Deply define how different layers in your architecture can interact with each other. This document explains the different types of rules and how to use them effectively.
