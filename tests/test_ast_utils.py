@@ -43,6 +43,12 @@ from collections import defaultdict
         result = get_base_name(expr, import_aliases)
         self.assertEqual(result, "mod.x.y")
 
+    def test_get_base_name_with_unknown_node_type(self):
+        import_aliases = {}
+        node = ast.Constant(value=1)
+        result = get_base_name(node, import_aliases)
+        self.assertEqual(result, "")
+
     def test_get_decorator_name_name(self):
         # Test a simple decorator: @mydecorator
         code = """
@@ -75,6 +81,11 @@ def foo(): pass
         decorator_node = tree.body[0].decorator_list[0]
         result = get_decorator_name(decorator_node)
         self.assertEqual(result, "decorator")
+
+    def test_get_decorator_name_unknown_node_type(self):
+        decorator_node = ast.Constant(value=1)
+        result = get_decorator_name(decorator_node)
+        self.assertIsNone(result)
 
     def test_get_annotation_name_simple(self):
         # Test with a simple annotation (Name node)
