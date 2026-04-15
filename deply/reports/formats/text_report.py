@@ -8,7 +8,7 @@ class SummaryTable:
     COL1_WIDTH = 30
     COL2_WIDTH = 5
 
-    def __init__(self, summary_data: dict[str, int]):
+    def __init__(self, summary_data: dict[str, str]):
         self.summary_data = summary_data
 
     def generate(self) -> str:
@@ -61,12 +61,12 @@ class TextReport:
         # 2) Build a dict of summary data
         summary_data = {}
         for violation_type, type_violations in grouped_violations.items():
-            summary_data[violation_type] = len(type_violations)
+            summary_data[violation_type] = str(len(type_violations))
 
         # Add a total
         total_count = len(self.violations)
         summary_data[""] = ""
-        summary_data["Total Violations"] = total_count
+        summary_data["Total Violations"] = str(total_count)
 
         # 3) Generate the summary table
         summary_table = SummaryTable(summary_data)

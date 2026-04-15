@@ -34,7 +34,7 @@ def get_decorator_name(decorator_node: ast.AST) -> Optional[str]:
         return decorator_node.id
     elif isinstance(decorator_node, ast.Attribute):
         attr_parts = []
-        current = decorator_node
+        current: ast.AST = decorator_node
         # Unroll attributes: @mod.sub.decorator
         while isinstance(current, ast.Attribute):
             attr_parts.append(current.attr)
@@ -51,13 +51,16 @@ def get_decorator_name(decorator_node: ast.AST) -> Optional[str]:
         return None
 
 
-def get_annotation_name(annotation_node: ast.AST, import_aliases: Dict[str, str]) -> Optional[str]:
+def get_annotation_name(annotation_node: Optional[ast.AST], import_aliases: Dict[str, str]) -> Optional[str]:
+    if annotation_node is None:
+        return None
+
     if isinstance(annotation_node, ast.Name):
         return import_aliases.get(annotation_node.id, annotation_node.id)
 
     elif isinstance(annotation_node, ast.Attribute):
         parts = []
-        current = annotation_node
+        current: ast.AST = annotation_node
         while isinstance(current, ast.Attribute):
             parts.append(current.attr)
             current = current.value
@@ -82,5 +85,5 @@ def get_annotation_name(annotation_node: ast.AST, import_aliases: Dict[str, str]
 
 def set_ast_parents(root: ast.AST):
     for child in ast.iter_child_nodes(root):
-        child.parent = root
+        setattr(child, "parent", root)
         set_ast_parents(child)

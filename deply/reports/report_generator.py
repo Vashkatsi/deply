@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 from .formats.github_actions_report import GitHubActionsReport
 from .formats.json_report import JsonReport
@@ -11,6 +11,7 @@ class ReportGenerator:
         self.violations = violations
 
     def generate(self, format: str) -> str:
+        reporter: Union[TextReport, JsonReport, GitHubActionsReport]
         if format == "text":
             reporter = TextReport(self.violations)
         elif format == "json":

@@ -1,6 +1,6 @@
-from .base_collector import BaseCollector
-from .file_regex_collector import FileRegexCollector
-from .class_inherits_collector import ClassInheritsCollector
-from .class_name_regex_collector import ClassNameRegexCollector
-from .directory_collector import DirectoryCollector
-from .decorator_usage_collector import DecoratorUsageCollector
+from .base_collector import BaseCollector as BaseCollector
+from .file_regex_collector import FileRegexCollector as FileRegexCollector
+from .class_inherits_collector import ClassInheritsCollector as ClassInheritsCollector
+from .class_name_regex_collector import ClassNameRegexCollector as ClassNameRegexCollector
+from .directory_collector import DirectoryCollector as DirectoryCollector
+from .decorator_usage_collector import DecoratorUsageCollector as DecoratorUsageCollector

@@ -35,5 +35,5 @@ class JsonReport:
     def _group_violations_by_type(self) -> dict[str, List[Violation]]:
         grouped = defaultdict(list)
         for violation in self.violations:
-            grouped[violation.violation_type.code].append(violation.to_dict())
+            grouped[violation.violation_type.code].append(violation)
         return dict(grouped)

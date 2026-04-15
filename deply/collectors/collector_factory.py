@@ -1,4 +1,4 @@
-from typing import Dict, Any, List
+from typing import Any, Dict, List, cast
 
 from .base_collector import BaseCollector
 from .bool_collector import BoolCollector
@@ -46,6 +46,8 @@ class CollectorFactory:
             cls = getattr(module, class_name, None)
             if not cls:
                 raise ValueError(f"Class '{class_name}' not found in {module_name}")
+            if not isinstance(cls, type) or not issubclass(cls, BaseCollector):
+                raise ValueError(f"Class '{class_name}' must inherit from BaseCollector")
 
             plugin_config = {
                 "params": config.get("params", {}),
@@ -54,7 +56,7 @@ class CollectorFactory:
             }
 
             try:
-                return cls(plugin_config)
+                return cast(BaseCollector, cls(plugin_config))
             except TypeError as e:
                 raise ValueError(f"Error initializing {class_path}: {str(e)}")
         else:

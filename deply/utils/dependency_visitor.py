@@ -1,6 +1,6 @@
 import ast
 import logging
-from typing import Dict, List, Callable, Set
+from typing import Callable, Dict, List, Optional, Set
 
 from deply.models.code_element import CodeElement
 from deply.models.dependency import Dependency
@@ -18,7 +18,7 @@ class DependencyVisitor(ast.NodeVisitor):
         self.dependency_types = dependency_types
         self.dependency_handler = dependency_handler
         self.name_to_elements = name_to_elements
-        self.current_code_element = None
+        self.current_code_element: Optional[CodeElement] = None
         logging.debug(f"DependencyVisitor created for file with {len(code_elements_in_file)} code elements")
 
     def visit_FunctionDef(self, node):
@@ -41,6 +41,8 @@ class DependencyVisitor(ast.NodeVisitor):
         if 'class_inheritance' in self.dependency_types and self.current_code_element:
             for base in node.bases:
                 base_name = self._get_full_name(base)
+                if base_name is None:
+                    continue
                 dep_elements = self.name_to_elements.get(base_name, set())
                 for dep_element in dep_elements:
                     dependency = Dependency(
@@ -57,6 +59,8 @@ class DependencyVisitor(ast.NodeVisitor):
             for keyword in node.keywords:
                 if keyword.arg == 'metaclass':
                     metaclass_name = self._get_full_name(keyword.value)
+                    if metaclass_name is None:
+                        continue
                     dep_elements = self.name_to_elements.get(metaclass_name, set())
                     for dep_element in dep_elements:
                         dependency = Dependency(
@@ -86,6 +90,9 @@ class DependencyVisitor(ast.NodeVisitor):
                     self.dependency_handler(dependency)
             elif isinstance(node.func, ast.Attribute):
                 full_name = self._get_full_name(node.func)
+                if full_name is None:
+                    self.generic_visit(node)
+                    return
                 dep_elements = self.name_to_elements.get(full_name, set())
                 for dep_element in dep_elements:
                     dependency = Dependency(
@@ -149,8 +156,13 @@ class DependencyVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def _process_decorators(self, node):
+        if self.current_code_element is None:
+            return
+
         for decorator in node.decorator_list:
             decorator_name = self._get_full_name(decorator)
+            if decorator_name is None:
+                continue
             dep_elements = self.name_to_elements.get(decorator_name, set())
             for dep_element in dep_elements:
                 dependency = Dependency(
@@ -163,7 +175,12 @@ class DependencyVisitor(ast.NodeVisitor):
                 self.dependency_handler(dependency)
 
     def _process_annotation(self, annotation):
+        if self.current_code_element is None:
+            return
+
         annotation_name = self._get_full_name(annotation)
+        if annotation_name is None:
+            return
         dep_elements = self.name_to_elements.get(annotation_name, set())
         for dep_element in dep_elements:
             dependency = Dependency(
@@ -184,7 +201,10 @@ class DependencyVisitor(ast.NodeVisitor):
             parent = getattr(parent, 'parent', None)
         return ".".join(reversed(parts))
 
-    def _get_full_name(self, node):
+    def _get_full_name(self, node: Optional[ast.AST]) -> Optional[str]:
+        if node is None:
+            return None
+
         if isinstance(node, ast.Name):
             return node.id
         elif isinstance(node, ast.Attribute):
@@ -198,7 +218,7 @@ class DependencyVisitor(ast.NodeVisitor):
         elif isinstance(node, ast.Subscript):
             return self._get_full_name(node.value)
         elif isinstance(node, ast.Index):
-            return self._get_full_name(node.value)
+            return self._get_full_name(getattr(node, "value", None))
         elif isinstance(node, ast.Constant):
             return str(node.value)
         else:

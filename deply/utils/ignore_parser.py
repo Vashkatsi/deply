@@ -1,12 +1,18 @@
 import tokenize
 from io import BytesIO
 from pathlib import Path
+from typing import Optional, TypedDict
 
 ALL_SUPPRESSION_RULES = "*"
 
 
-def parse_ignore_comments(file_path: Path, file_bytes: bytes = None) -> dict:
-    ignore_map = {"file": set(), "lines": {}}
+class IgnoreMap(TypedDict):
+    file: set[str]
+    lines: dict[int, set[str]]
+
+
+def parse_ignore_comments(file_path: Path, file_bytes: Optional[bytes] = None) -> IgnoreMap:
+    ignore_map: IgnoreMap = {"file": set(), "lines": {}}
     try:
         if file_bytes is None:
             file_bytes = file_path.read_bytes()

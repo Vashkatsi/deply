@@ -12,7 +12,7 @@ from .bool_rule import BoolRule
 class RuleFactory:
     @staticmethod
     def create_sub_rules(rule_configs: List[Dict[str, Any]], layer_name: str) -> List[BaseRule]:
-        rules = []
+        rules: List[BaseRule] = []
         for rule_config in rule_configs:
             rule = RuleFactory._create_rule_from_config(layer_name, rule_config)
             if rule is not None:
@@ -21,7 +21,7 @@ class RuleFactory:
 
     @staticmethod
     def create_rules(ruleset: Dict[str, Any]) -> List[BaseRule]:
-        rules = []
+        rules: List[BaseRule] = []
         for layer_name, layer_rules in ruleset.items():
             disallowed = layer_rules.get("disallow_layer_dependencies")
             if disallowed:
@@ -50,7 +50,7 @@ class RuleFactory:
         if key not in layer_rules:
             return []
         configs = layer_rules[key]
-        collected = []
+        collected: List[BaseRule] = []
         for rule_config in configs:
             rule = RuleFactory._create_rule_from_config(layer_name, rule_config)
             if rule is not None:

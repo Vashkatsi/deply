@@ -39,6 +39,7 @@ class DecoratorUsageCollector(BaseCollector):
                     continue
 
                 full_name = self._get_full_name(node)
+                type_annotations: Dict[str, str] = {}
 
                 if isinstance(node, ast.ClassDef):
                     element_type = 'class'
@@ -48,7 +49,6 @@ class DecoratorUsageCollector(BaseCollector):
                         inherits_list.append(base_name)
 
                     return_annotation = None
-                    type_annotations: Dict[str, str] = {}
                     for stmt in node.body:
                         if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
                             ann_name = get_annotation_name(stmt.annotation, import_aliases)
@@ -63,7 +63,6 @@ class DecoratorUsageCollector(BaseCollector):
                     else:
                         return_annotation = None
 
-                    type_annotations: Dict[str, str] = {}
                     for arg in node.args.args:
                         if arg.annotation is not None:
                             ann_name = get_annotation_name(arg.annotation, import_aliases)

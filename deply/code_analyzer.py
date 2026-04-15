@@ -1,5 +1,6 @@
 import ast
 import logging
+from pathlib import Path
 from typing import Dict, Set, Callable
 
 from deply.models.code_element import CodeElement
@@ -35,7 +36,7 @@ class CodeAnalyzer:
         name_to_elements = self._build_name_to_element_map()
         logging.debug(f"Name to elements map built with {len(name_to_elements)} names.")
 
-        file_to_elements: Dict[str, Set[CodeElement]] = {}
+        file_to_elements: Dict[Path, Set[CodeElement]] = {}
         for code_element in self.code_elements:
             file_to_elements.setdefault(code_element.file, set()).add(code_element)
 
@@ -46,7 +47,7 @@ class CodeAnalyzer:
 
     def _build_name_to_element_map(self) -> Dict[str, Set[CodeElement]]:
         logging.debug("Building name to element map.")
-        name_to_element = {}
+        name_to_element: Dict[str, Set[CodeElement]] = {}
         for elem in self.code_elements:
             name_to_element.setdefault(elem.name, set()).add(elem)
         logging.debug(f"Name to element map contains {len(name_to_element)} entries.")
@@ -54,7 +55,7 @@ class CodeAnalyzer:
 
     def _extract_dependencies_from_file(
             self,
-            file_path: str,
+            file_path: Path,
             code_elements_in_file: Set[CodeElement],
             name_to_elements: Dict[str, Set[CodeElement]]
     ) -> None:

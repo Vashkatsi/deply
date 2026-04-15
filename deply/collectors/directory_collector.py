@@ -1,7 +1,7 @@
 import ast
 import re
 from pathlib import Path
-from typing import List, Set, Dict
+from typing import Dict, List, Optional, Set
 
 from deply.collectors import BaseCollector
 from deply.models.code_element import CodeElement
@@ -220,7 +220,7 @@ class DirectoryCollector(BaseCollector):
     def _get_full_name(self, node: ast.AST) -> str:
         """Build a dotted name for class/function definitions, e.g. 'MyClass.inner_func'."""
         names = []
-        current = node
+        current: Optional[ast.AST] = node
         while isinstance(current, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
             names.append(current.name)
             current = getattr(current, 'parent', None)

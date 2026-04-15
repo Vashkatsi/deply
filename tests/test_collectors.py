@@ -81,7 +81,7 @@ class TestCollectors(unittest.TestCase):
                     with open(f, "r", encoding="utf-8") as file:
                         file_content = file.read()
                     file_ast = ast.parse(file_content, filename=str(f))
-                except:
+                except Exception:
                     continue
 
                 matched = collector.match_in_file(file_ast, f)

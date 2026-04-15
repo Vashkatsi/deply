@@ -111,7 +111,18 @@ Feel free to contribute to this project by opening an issue or submitting a pull
 
 ## Running Tests
 
-To test the tool, use `unittest`:
+Use the following commands for local quality checks:
+
+```bash
+make check
+make test
+make lint
+make typing
+make security
+make pre-commit
+```
+
+Or run `unittest` directly:
 
 ```bash
 python -m unittest discover tests

@@ -4,6 +4,7 @@ import logging
 import os
 import re
 from pathlib import Path
+from typing import Any, List, Tuple
 
 from deply.code_analyzer import CodeAnalyzer
 from deply.collectors.collector_factory import CollectorFactory
@@ -14,7 +15,7 @@ from deply.models.layer import Layer
 from deply.models.violation import Violation
 from deply.reports.report_generator import ReportGenerator
 from deply.rules import RuleFactory
-from deply.utils.ignore_parser import parse_ignore_comments, ALL_SUPPRESSION_RULES
+from deply.utils.ignore_parser import parse_ignore_comments, ALL_SUPPRESSION_RULES, IgnoreMap
 
 
 class DeplyRunner:
@@ -40,11 +41,12 @@ class DeplyRunner:
         if self.args.parallel is None:
             return 1
 
-        available_workers = os.cpu_count()
+        available_workers = os.cpu_count() or 1
+        parallel_workers = int(self.args.parallel)
 
-        if self.args.parallel == 0:
+        if parallel_workers == 0:
             return available_workers
-        return min(available_workers, self.args.parallel)
+        return min(available_workers, parallel_workers)
 
     def load_configuration(self):
         config_path = Path(self.args.config)
@@ -210,9 +212,9 @@ class DeplyRunner:
         return len(self.violations) <= self.args.max_violations
 
 
-def process_file(file_path: Path, layer_collectors):
-    results = []
-    ignore_map = {"file": set(), "lines": {}}
+def process_file(file_path: Path, layer_collectors: List[Tuple[str, Any]]) -> Tuple[str, List[Tuple[str, CodeElement]], IgnoreMap]:
+    results: List[Tuple[str, CodeElement]] = []
+    ignore_map: IgnoreMap = {"file": set(), "lines": {}}
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             file_content = f.read()
