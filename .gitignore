@@ -26,3 +26,4 @@ env/
 deply.yaml
 .idea/
 /tasks/
+mutants/

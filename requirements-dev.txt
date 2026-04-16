@@ -3,3 +3,5 @@ mypy
 pip-audit
 pre-commit
 types-PyYAML
+mutmut
+pytest

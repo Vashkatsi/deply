@@ -10,9 +10,19 @@ target-version = "py39"
 select = ["E4", "E7", "E9", "F"]
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 check_untyped_defs = true
 warn_return_any = true
 warn_unused_ignores = true
 show_error_codes = true
 pretty = true
+
+[tool.mutmut]
+paths_to_mutate = [
+    "deply/deply_runner.py",
+    "deply/utils/dependency_visitor.py",
+    "deply/rules/",
+]
+also_copy = ["deply/"]
+mutate_only_covered_lines = true
+pytest_add_cli_args_test_selection = ["tests"]
