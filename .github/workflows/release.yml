@@ -1,30 +1,38 @@
-name: Python package
+name: Release package
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    tags:
+      - 'v*'
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.14'
 
-      - name: Install dependencies
+      - name: Build distribution artifacts
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip setuptools wheel
+          python setup.py sdist bdist_wheel
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-dist
+          path: dist/*
+          if-no-files-found: error
 
   lint:
     runs-on: ubuntu-latest
     needs: build
+
     steps:
       - uses: actions/checkout@v4
 
@@ -45,6 +53,7 @@ jobs:
   typing:
     runs-on: ubuntu-latest
     needs: build
+
     steps:
       - uses: actions/checkout@v4
 
@@ -65,6 +74,7 @@ jobs:
   security:
     runs-on: ubuntu-latest
     needs: build
+
     steps:
       - uses: actions/checkout@v4
 
@@ -175,11 +185,11 @@ jobs:
           )
           PY
 
-  mutation:
+  release:
     runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name == 'pull_request'
-    timeout-minutes: 5
+    needs: [build, lint, typing, security, test, coverage-gates]
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -189,101 +199,53 @@ jobs:
         with:
           python-version: '3.14'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
+      - name: Download distribution artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: package-dist
+          path: dist
 
-      - name: Run mutation tests (report-only)
+      - name: Validate tag and package version
         run: |
-          mutmut run
-          mutmut export-cicd-stats
+          if [[ "${GITHUB_REF_NAME}" != v* ]]; then
+            echo "Release tag must start with 'v'. Got: ${GITHUB_REF_NAME}"
+            exit 1
+          fi
 
-      - name: Validate mutation execution
-        run: |
-          python - <<'PY'
-          import json
-          import sys
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PACKAGE_VERSION=$(python - <<'PY'
+          import re
           from pathlib import Path
 
-          report_path = Path("mutants/mutmut-cicd-stats.json")
-          if not report_path.exists():
-              print("Mutation report is missing.")
-              sys.exit(1)
-
-          report = json.loads(report_path.read_text(encoding="utf-8"))
-          total = int(report.get("total", 0))
-          no_tests = int(report.get("no_tests", 0))
-          technical_issue_count = (
-              int(report.get("timeout", 0))
-              + int(report.get("suspicious", 0))
-              + int(report.get("check_was_interrupted_by_user", 0))
-              + int(report.get("segfault", 0))
+          init_file_content = Path("deply/__init__.py").read_text(encoding="utf-8")
+          version_match = re.search(r"__version__ = '([^']+)'", init_file_content)
+          if version_match is None:
+              raise SystemExit("Unable to read __version__ from deply/__init__.py")
+          print(version_match.group(1))
+          PY
           )
 
-          if total == 0:
-              print("Mutation execution failed: total mutants is zero.")
-              sys.exit(1)
+          if [[ "${TAG_VERSION}" != "${PACKAGE_VERSION}" ]]; then
+            echo "Tag version (${TAG_VERSION}) does not match package version (${PACKAGE_VERSION})."
+            exit 1
+          fi
 
-          if no_tests == total:
-              print("Mutation execution failed: all mutants reported as no-tests.")
-              sys.exit(1)
-
-          if technical_issue_count > 0:
-              print(
-                  "Mutation execution failed due to technical issues: "
-                  f"{technical_issue_count}."
-              )
-              sys.exit(1)
-
-          print("Mutation execution validation passed.")
-          PY
-
-      - name: Publish mutation summary
-        if: always()
+      - name: Run twine check
         run: |
-          python - <<'PY'
-          import json
-          import os
-          from pathlib import Path
+          python -m pip install --upgrade pip twine
+          python -m twine check dist/*
 
-          summary_path = Path(os.environ["GITHUB_STEP_SUMMARY"])
-          report_path = Path("mutants/mutmut-cicd-stats.json")
+      - name: Run wheel smoke test
+        run: |
+          python -m venv /tmp/deply-smoke
+          /tmp/deply-smoke/bin/pip install --upgrade pip
+          /tmp/deply-smoke/bin/pip install dist/*.whl
+          /tmp/deply-smoke/bin/deply --version
 
-          if not report_path.exists():
-              with summary_path.open("a", encoding="utf-8") as summary_file:
-                  summary_file.write("## Mutation Testing (report-only)\n\n")
-                  summary_file.write("- Report was not generated.\n")
-              raise SystemExit(0)
-
-          report = json.loads(report_path.read_text(encoding="utf-8"))
-          killed = int(report.get("killed", 0))
-          survived = int(report.get("survived", 0))
-          total = int(report.get("total", 0))
-          timeout = int(report.get("timeout", 0))
-          suspicious = int(report.get("suspicious", 0))
-          no_tests = int(report.get("no_tests", 0))
-          skipped = int(report.get("skipped", 0))
-          score = (killed / total * 100.0) if total else 0.0
-
-          with summary_path.open("a", encoding="utf-8") as summary_file:
-              summary_file.write("## Mutation Testing (report-only)\n\n")
-              summary_file.write(f"- Total mutants: {total}\n")
-              summary_file.write(f"- Killed: {killed}\n")
-              summary_file.write(f"- Survived: {survived}\n")
-              summary_file.write(f"- No tests: {no_tests}\n")
-              summary_file.write(f"- Timeout: {timeout}\n")
-              summary_file.write(f"- Suspicious: {suspicious}\n")
-              summary_file.write(f"- Skipped: {skipped}\n")
-              summary_file.write(f"- Mutation score: {score:.2f}%\n")
-          PY
-
-      - name: Upload mutation report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: mutation-report
-          path: |
-            mutants/mutmut-cicd-stats.json
-            mutants/mutmut-stats.json
-            mutants/**/*.meta
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          python -m pip install --upgrade pip twine
+          python -m twine upload dist/*

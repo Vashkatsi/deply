@@ -60,4 +60,4 @@ Deply is a standalone Python tool for enforcing architectural patterns and depen
 ![Static Badge](https://img.shields.io/badge/downloads->2_k_month-2282c2)
 ![Static Badge](https://img.shields.io/badge/test-passing-98c525)
 ![Static Badge](https://img.shields.io/badge/coverage-97%25-98c525)
-![Static Badge](https://img.shields.io/badge/python-3.8_|_3.9_|3.10_|_3.11_|_3.12_|_3.13-98c525)
+![Static Badge](https://img.shields.io/badge/python-3.8_|_3.9_|3.10_|_3.11_|_3.12_|_3.13_|_3.14-98c525)
