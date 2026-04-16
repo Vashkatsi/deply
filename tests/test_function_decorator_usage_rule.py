@@ -1,5 +1,6 @@
 import unittest
 from pathlib import Path
+from typing import Tuple
 
 from deply.models.code_element import CodeElement
 from deply.models.violation import Violation
@@ -13,7 +14,7 @@ class TestFunctionDecoratorUsageRule(unittest.TestCase):
         self.decorator_pattern = r"^tracked_.*$"
         self.rule = FunctionDecoratorUsageRule(self.layer_name, self.decorator_pattern)
 
-    def _build_element(self, name: str, element_type: str, decorators: tuple[str, ...]) -> CodeElement:
+    def _build_element(self, name: str, element_type: str, decorators: Tuple[str, ...]) -> CodeElement:
         return CodeElement(
             file=Path("module.py"),
             name=name,

@@ -4,7 +4,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, List, Tuple
+from typing import Any, Dict, List, Set, Tuple
 
 from deply.code_analyzer import CodeAnalyzer
 from deply.collectors.collector_factory import CollectorFactory
@@ -28,10 +28,10 @@ class DeplyRunner:
         self.ruleset = {}
         self.layer_collectors = []
         self.all_files = []
-        self.layers: dict[str, Layer] = {}
-        self.code_element_to_layer: dict[CodeElement, str] = {}
+        self.layers: Dict[str, Layer] = {}
+        self.code_element_to_layer: Dict[CodeElement, str] = {}
         self.rules = []
-        self.violations: set[Violation] = set()
+        self.violations: Set[Violation] = set()
         self.metrics = {'total_dependencies': 0}
         self.mermaid_builder = MermaidDiagramBuilder()
         self.workers_count = 1

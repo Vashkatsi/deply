@@ -6,6 +6,7 @@ import unittest
 from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
+from typing import Tuple
 
 import yaml
 
@@ -49,7 +50,7 @@ class TestFalseDependencyPath(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.test_dir)
 
-    def run_deply(self, config_data) -> tuple[int, str]:
+    def run_deply(self, config_data) -> Tuple[int, str]:
         config_path = Path(self.test_dir) / 'deply.yaml'
         with config_path.open('w') as f:
             yaml.dump(config_data, f)

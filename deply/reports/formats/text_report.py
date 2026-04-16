@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import List
+from typing import Dict, List
 
 from ...models.violation import Violation
 
@@ -8,7 +8,7 @@ class SummaryTable:
     COL1_WIDTH = 30
     COL2_WIDTH = 5
 
-    def __init__(self, summary_data: dict[str, str]):
+    def __init__(self, summary_data: Dict[str, str]):
         self.summary_data = summary_data
 
     def generate(self) -> str:
@@ -74,7 +74,7 @@ class TextReport:
 
         return "\n".join(lines)
 
-    def _group_violations_by_type(self) -> dict[str, List[Violation]]:
+    def _group_violations_by_type(self) -> Dict[str, List[Violation]]:
         grouped = defaultdict(list)
         for violation in self.violations:
             grouped[violation.violation_type.display_name].append(violation)

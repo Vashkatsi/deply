@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Set
 
 from .dependency import Dependency
 from ..models.code_element import CodeElement
@@ -7,5 +8,5 @@ from ..models.code_element import CodeElement
 @dataclass()
 class Layer:
     name: str
-    code_elements: set[CodeElement]
-    dependencies: set[Dependency]
+    code_elements: Set[CodeElement]
+    dependencies: Set[Dependency]

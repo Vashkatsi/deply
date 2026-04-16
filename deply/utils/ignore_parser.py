@@ -1,14 +1,14 @@
 import tokenize
 from io import BytesIO
 from pathlib import Path
-from typing import Optional, TypedDict
+from typing import Dict, Optional, Set, TypedDict
 
 ALL_SUPPRESSION_RULES = "*"
 
 
 class IgnoreMap(TypedDict):
-    file: set[str]
-    lines: dict[int, set[str]]
+    file: Set[str]
+    lines: Dict[int, Set[str]]
 
 
 def parse_ignore_comments(file_path: Path, file_bytes: Optional[bytes] = None) -> IgnoreMap:

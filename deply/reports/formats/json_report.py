@@ -1,6 +1,6 @@
 import json
 from collections import defaultdict
-from typing import List
+from typing import Dict, List
 from ...models.violation import Violation
 
 
@@ -32,7 +32,7 @@ class JsonReport:
 
         return json.dumps(data, indent=2)
 
-    def _group_violations_by_type(self) -> dict[str, List[Violation]]:
+    def _group_violations_by_type(self) -> Dict[str, List[Violation]]:
         grouped = defaultdict(list)
         for violation in self.violations:
             grouped[violation.violation_type.code].append(violation)

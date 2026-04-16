@@ -1,6 +1,9 @@
+from typing import Dict, Tuple
+
+
 class MermaidDiagramBuilder:
     def __init__(self):
-        self._edges_with_violation: dict[tuple[str, str], bool] = {}
+        self._edges_with_violation: Dict[Tuple[str, str], bool] = {}
 
     def add_edge(self, source_layer: str, target_layer: str, has_violation: bool) -> None:
         """
@@ -47,5 +50,5 @@ class MermaidDiagramBuilder:
         return "\n".join(lines)
 
     @property
-    def edges_with_violation(self) -> dict[tuple[str, str], bool]:
+    def edges_with_violation(self) -> Dict[Tuple[str, str], bool]:
         return self._edges_with_violation
