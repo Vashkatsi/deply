@@ -17,6 +17,12 @@ class TestCollectorEdgeCases(unittest.TestCase):
     def _parse(self, source_code: str) -> ast.AST:
         return ast.parse(source_code)
 
+    def _unsupported_decorator_node(self) -> ast.AST:
+        return ast.parse("decorators[0]", mode="eval").body
+
+    def _prepend_unsupported_decorator(self, node: ast.AST) -> None:
+        node.decorator_list.insert(0, self._unsupported_decorator_node())
+
     def _build_code_element(self, name: str, element_type: str = "class") -> CodeElement:
         return CodeElement(
             file=Path("sample.py"),
@@ -116,9 +122,6 @@ module_value = 10
     def test_file_regex_collector_handles_partial_annotations_and_non_name_assign_targets(self):
         source_tree = self._parse(
             """
-decorators = [lambda function: function]
-
-@decorators[0]
 @visible
 def collect_data(
     pos_only_annotated: int,
@@ -133,7 +136,6 @@ def collect_data(
 ) -> ReturnType:
     return 1
 
-@decorators[0]
 def no_return_annotation(parameter):
     return parameter
 
@@ -141,6 +143,9 @@ left, right = (1, 2)
 module_value = 100
             """
         )
+        for node in ast.walk(source_tree):
+            if isinstance(node, ast.FunctionDef) and node.name in {"collect_data", "no_return_annotation"}:
+                self._prepend_unsupported_decorator(node)
         target_path = Path("/tmp/project/target.py")
 
         function_collector = FileRegexCollector(
@@ -175,7 +180,7 @@ module_value = 100
         variable_names = {
             element.name for element in variable_collector.match_in_file(source_tree, target_path)
         }
-        self.assertEqual(variable_names, {"decorators", "module_value"})
+        self.assertEqual(variable_names, {"module_value"})
 
     def test_directory_collector_handles_annotations_and_exclusions(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -261,15 +266,11 @@ def helper():
 
             source_tree = self._parse(
                 """
-decorators = [lambda function: function]
-
-@decorators[0]
 @named_class_decorator
 class Service:
     valid_field: str
     invalid_field: 1 + 2
 
-@decorators[0]
 @named_function_decorator
 def execute(
     pos_only_annotated: int,
@@ -287,6 +288,11 @@ def execute(
 module_value = 5
                 """
             )
+            for node in ast.walk(source_tree):
+                if isinstance(node, ast.ClassDef) and node.name == "Service":
+                    self._prepend_unsupported_decorator(node)
+                if isinstance(node, ast.FunctionDef) and node.name == "execute":
+                    self._prepend_unsupported_decorator(node)
 
             collector = DirectoryCollector(
                 config={"directories": ["services"]},
@@ -397,9 +403,6 @@ def collect_metrics(pos_only: int, /, normal: str, *var_args: float, key_only: b
     def test_decorator_usage_collector_handles_no_match_and_optional_annotations(self):
         source_tree = self._parse(
             """
-decorators = [lambda function: function]
-
-@decorators[0]
 @track_usage
 def tracked(
     pos_only_annotated: int,
@@ -414,20 +417,23 @@ def tracked(
 ):
     return 1
 
-@decorators[0]
 def unmatched():
     return 1
 
 class BaseModel:
     pass
 
-@decorators[0]
 @track_usage
 class TrackedClass(BaseModel):
     valid_field: str
     invalid_field: 1 + 2
             """
         )
+        for node in ast.walk(source_tree):
+            if isinstance(node, ast.FunctionDef) and node.name in {"tracked", "unmatched"}:
+                self._prepend_unsupported_decorator(node)
+            if isinstance(node, ast.ClassDef) and node.name == "TrackedClass":
+                self._prepend_unsupported_decorator(node)
         collector = DecoratorUsageCollector({"decorator_regex": r"^track_.*$"})
         collected_elements = collector.match_in_file(source_tree, Path("/tmp/metrics.py"))
 
@@ -448,9 +454,6 @@ class TrackedClass(BaseModel):
     def test_function_name_regex_collector_handles_regex_miss_and_optional_annotations(self):
         source_tree = self._parse(
             """
-decorators = [lambda function: function]
-
-@decorators[0]
 @trace
 def collect_items(
     pos_only_annotated: int,
@@ -469,6 +472,9 @@ def skip_items(parameter):
     return parameter
             """
         )
+        for node in ast.walk(source_tree):
+            if isinstance(node, ast.FunctionDef) and node.name == "collect_items":
+                self._prepend_unsupported_decorator(node)
         collector = FunctionNameRegexCollector({"function_name_regex": r"^collect_.*$"})
         collected_elements = collector.match_in_file(source_tree, Path("/tmp/metrics.py"))
 
@@ -507,18 +513,18 @@ class UserModel(BaseModel):
     def test_class_inherits_collector_handles_decorators_and_partial_annotations(self):
         source_tree = self._parse(
             """
-decorators = [lambda value: value]
-
 class BaseModel:
     pass
 
-@decorators[0]
 @entity
 class UserModel(BaseModel):
     valid_field: str
     invalid_field: 1 + 2
             """
         )
+        for node in ast.walk(source_tree):
+            if isinstance(node, ast.ClassDef) and node.name == "UserModel":
+                self._prepend_unsupported_decorator(node)
         collector = ClassInheritsCollector({"base_class": "BaseModel"})
         collected_elements = collector.match_in_file(source_tree, Path("/tmp/project/models/user_model.py"))
 
