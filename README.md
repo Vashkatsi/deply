@@ -6,7 +6,7 @@ For example, you can use Deply to ensure that modules/packages in your project a
 
 Deply can be used in a CI pipeline to make sure a pull request does not violate any of the architectural rules you defined. With the optional Mermaid formatter you can visualize your layers, rules and violations.
 
-![Static Badge](https://img.shields.io/badge/stable-v0.8.1-319cd2)
+![Static Badge](https://img.shields.io/badge/stable-v0.8.2-319cd2)
 ![Static Badge](https://img.shields.io/badge/downloads->2_k_month-2282c2)
 ![Static Badge](https://img.shields.io/badge/test-passing-98c525)
 ![Static Badge](https://img.shields.io/badge/coverage-97%25-98c525)
