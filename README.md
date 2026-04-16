@@ -117,6 +117,7 @@ Use the following commands for local quality checks:
 ```bash
 make check
 make test
+make mutation
 make lint
 make typing
 make security
