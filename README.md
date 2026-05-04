@@ -154,6 +154,10 @@ A plan to evolve Deply into a must-have architectural guardian for Python projec
 - [Mermaid Diagrams](https://vashkatsi.github.io/deply/doc/mermaid.html) - Overview of the diagram generation capabilities
 - [Command Line Interface](https://vashkatsi.github.io/deply/doc/cli.html) - Advice for using the CLI
 
+## Author
+
+[Archil Abuladze](https://www.linkedin.com/in/vashkatsi/)
+
 ## License
 
 See the [LICENSE](LICENSE) file for details.
