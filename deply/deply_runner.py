@@ -181,6 +181,43 @@ class DeplyRunner:
                     if violation_candidate and not self.is_violation_suppressed(violation_candidate):
                         self.violations.add(violation_candidate)
 
+    def run_external_import_checks(self):
+        external_import_rules = [
+            rule for rule in self.rules if getattr(rule, "checks_external_imports", False)
+        ]
+        if not external_import_rules:
+            return
+
+        file_layer_elements: Dict[Tuple[Path, str], CodeElement] = {}
+        for element, layer_name in self.code_element_to_layer.items():
+            key = (element.file, layer_name)
+            current_element = file_layer_elements.get(key)
+            if current_element is None or (
+                    element.line,
+                    element.column,
+                    element.name,
+            ) < (
+                    current_element.line,
+                    current_element.column,
+                    current_element.name,
+            ):
+                file_layer_elements[key] = element
+
+        imports_by_file: Dict[Path, List[Tuple[str, int, int]]] = {}
+        for (file_path, layer_name), element in file_layer_elements.items():
+            imports = imports_by_file.setdefault(file_path, extract_absolute_imports(file_path))
+            for module_name, line, column in imports:
+                for rule in external_import_rules:
+                    violation_candidate = rule.check_external_import(
+                        layer_name,
+                        element,
+                        module_name,
+                        line,
+                        column,
+                    )
+                    if violation_candidate and not self.is_violation_suppressed(violation_candidate):
+                        self.violations.add(violation_candidate)
+
     def generate_report(self):
         logging.info("Generating report...")
         return ReportGenerator(list(self.violations)).generate(self.args.report_format)
@@ -206,10 +243,33 @@ class DeplyRunner:
         self.prepare_rules()
         self.analyze_dependencies()
         self.run_element_based_checks()
+        self.run_external_import_checks()
         report = self.generate_report()
         self.output_report(report)
 
         return len(self.violations) <= self.args.max_violations
+
+
+def extract_absolute_imports(file_path: Path) -> List[Tuple[str, int, int]]:
+    imports: List[Tuple[str, int, int]] = []
+    try:
+        source_code = file_path.read_text(encoding="utf-8")
+        file_ast = ast.parse(source_code, filename=str(file_path))
+    except Exception as ex:
+        logging.debug(f"Skipping external import checks for {file_path}: {ex}")
+        return imports
+
+    for node in ast.walk(file_ast):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                imports.append((alias.name, node.lineno, node.col_offset))
+        elif isinstance(node, ast.ImportFrom):
+            if node.level:
+                continue
+            if node.module:
+                imports.append((node.module, node.lineno, node.col_offset))
+
+    return imports
 
 
 def process_file(file_path: Path, layer_collectors: List[Tuple[str, Any]]) -> Tuple[str, List[Tuple[str, CodeElement]], IgnoreMap]:

@@ -64,6 +64,10 @@ ruleset:
   views:
     disallow_layer_dependencies:
       - models
+  domain:
+    disallow_external_imports:
+      - django
+      - requests
 ```
 
 ### Collectors
@@ -99,6 +103,10 @@ ruleset:
     enforce_function_decorator_usage:
       - type: function_decorator_name_regex
         decorator_name_regex: "app.task"
+  domain:
+    disallow_external_imports:
+      - django
+      - sqlalchemy
 ```
 
 ## Best Practices
