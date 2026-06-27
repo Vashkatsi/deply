@@ -151,6 +151,7 @@ A plan to evolve Deply into a must-have architectural guardian for Python projec
   🔲 Dependency graph caching  
   🔲 Custom rules system  
   🔲 FastAPI/Django/Flask presets  
+  🔲 LLM skill creation helpers
   ✅ Third-party import restrictions (`disallow_external_imports`)
 
 ## Further Documentation
