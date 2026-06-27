@@ -22,6 +22,7 @@ class TestDependencyVisitor(unittest.TestCase):
         source_code = textwrap.dedent(
             """
             import package.module as imported_module
+            import another.module
             from package.other import ImportedSymbol as imported_symbol
 
             def source_function():
@@ -38,6 +39,7 @@ class TestDependencyVisitor(unittest.TestCase):
         source_class_element = self._build_code_element("SourceClass", "class")
 
         imported_module_element = self._build_code_element("imported_module_dependency", "variable")
+        another_module_element = self._build_code_element("another_module_dependency", "variable")
         imported_symbol_element = self._build_code_element("imported_symbol_dependency", "class")
 
         captured_dependencies = []
@@ -50,6 +52,7 @@ class TestDependencyVisitor(unittest.TestCase):
             dependency_handler=captured_dependencies.append,
             name_to_elements={
                 "imported_module": {imported_module_element},
+                "another": {another_module_element},
                 "imported_symbol": {imported_symbol_element},
             },
         )
@@ -70,19 +73,77 @@ class TestDependencyVisitor(unittest.TestCase):
         expected_dependencies = {
             ("import", "source_function", "imported_module_dependency", 2, 0),
             ("import", "SourceClass", "imported_module_dependency", 2, 0),
-            ("import_from", "source_function", "imported_symbol_dependency", 3, 0),
-            ("import_from", "SourceClass", "imported_symbol_dependency", 3, 0),
+            ("import", "source_function", "another_module_dependency", 3, 0),
+            ("import", "SourceClass", "another_module_dependency", 3, 0),
+            ("import_from", "source_function", "imported_symbol_dependency", 4, 0),
+            ("import_from", "SourceClass", "imported_symbol_dependency", 4, 0),
+        }
+        self.assertEqual(actual_dependencies, expected_dependencies)
+
+    def test_visit_collects_function_call_attribute_call_and_inheritance_dependencies(self):
+        source_code = textwrap.dedent(
+            """
+            class Base:
+                pass
+
+            class Child(Base):
+                def method(self):
+                    helper()
+                    service.run()
+            """
+        )
+        syntax_tree = ast.parse(source_code)
+        set_ast_parents(syntax_tree)
+
+        child_element = self._build_code_element("Child", "class")
+        method_element = self._build_code_element("Child.method", "function")
+        base_element = self._build_code_element("Base", "class")
+        helper_element = self._build_code_element("helper", "function")
+        run_element = self._build_code_element("service.run", "function")
+
+        captured_dependencies = []
+        visitor = DependencyVisitor(
+            code_elements_in_file={
+                "Child": child_element,
+                "Child.method": method_element,
+            },
+            dependency_types=["class_inheritance", "function_call"],
+            dependency_handler=captured_dependencies.append,
+            name_to_elements={
+                "Base": {base_element},
+                "helper": {helper_element},
+                "service.run": {run_element},
+            },
+        )
+
+        visitor.visit(syntax_tree)
+
+        actual_dependencies = {
+            (
+                dependency.dependency_type,
+                dependency.code_element.name,
+                dependency.depends_on_code_element.name,
+                dependency.line,
+                dependency.column,
+            )
+            for dependency in captured_dependencies
+        }
+
+        expected_dependencies = {
+            ("class_inheritance", "Child", "Base", 5, 12),
+            ("function_call", "Child.method", "helper", 7, 8),
+            ("function_call", "Child.method", "service.run", 8, 8),
         }
         self.assertEqual(actual_dependencies, expected_dependencies)
 
     def test_visit_class_and_function_collects_decorator_annotation_and_metaclass_dependencies(self):
         source_code = textwrap.dedent(
             """
-            @function_decorator
+            @function_decorator()
             def source_function(parameter_annotation: ParameterType) -> ReturnType:
                 return 1
 
-            @class_decorator
+            @class_decorator()
             class SourceClass(metaclass=MetaClass):
                 pass
             """
@@ -171,6 +232,41 @@ class TestDependencyVisitor(unittest.TestCase):
             ),
         }
         self.assertEqual(actual_dependencies, expected_dependencies)
+
+    def test_visit_name_load_collects_dependency_for_loaded_names(self):
+        source_code = textwrap.dedent(
+            """
+            def source_function():
+                return shared_value
+            """
+        )
+        syntax_tree = ast.parse(source_code)
+        set_ast_parents(syntax_tree)
+
+        source_function_element = self._build_code_element("source_function", "function")
+        shared_value_element = self._build_code_element("shared_value", "variable")
+
+        captured_dependencies = []
+        visitor = DependencyVisitor(
+            code_elements_in_file={
+                "source_function": source_function_element,
+            },
+            dependency_types=["name_load"],
+            dependency_handler=captured_dependencies.append,
+            name_to_elements={
+                "shared_value": {shared_value_element},
+            },
+        )
+
+        visitor.visit(syntax_tree)
+
+        self.assertEqual(len(captured_dependencies), 1)
+        dependency = captured_dependencies[0]
+        self.assertEqual(dependency.dependency_type, "name_load")
+        self.assertEqual(dependency.code_element, source_function_element)
+        self.assertEqual(dependency.depends_on_code_element, shared_value_element)
+        self.assertEqual(dependency.line, 3)
+        self.assertEqual(dependency.column, 11)
 
     def test_get_full_name_handles_subscript_constant_index_and_fallback(self):
         visitor = DependencyVisitor(

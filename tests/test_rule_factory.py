@@ -39,6 +39,35 @@ class TestRuleFactory(unittest.TestCase):
         self.assertEqual(len(rules), 1)
         self.assertIsInstance(rules[0], ExternalImportRule)
 
+    def test_create_rules_for_decorator_rules_preserves_layer_and_pattern(self):
+        rules = RuleFactory.create_rules(
+            {
+                "service_layer": {
+                    "enforce_class_decorator_usage": [
+                        {
+                            "type": "class_decorator_name_regex",
+                            "decorator_name_regex": r"^entity_.*$",
+                        }
+                    ],
+                    "enforce_function_decorator_usage": [
+                        {
+                            "type": "function_decorator_name_regex",
+                            "decorator_name_regex": r"^tracked_.*$",
+                        }
+                    ],
+                }
+            }
+        )
+
+        self.assertEqual(len(rules), 2)
+        class_decorator_rule, function_decorator_rule = rules
+        self.assertIsInstance(class_decorator_rule, ClassDecoratorUsageRule)
+        self.assertEqual(class_decorator_rule.layer_name, "service_layer")
+        self.assertEqual(class_decorator_rule.decorator_pattern.pattern, r"^entity_.*$")
+        self.assertIsInstance(function_decorator_rule, FunctionDecoratorUsageRule)
+        self.assertEqual(function_decorator_rule.layer_name, "service_layer")
+        self.assertEqual(function_decorator_rule.decorator_pattern.pattern, r"^tracked_.*$")
+
     def test_create_rule_from_config_for_bool_and_unknown_type(self):
         bool_rule = RuleFactory._create_rule_from_config(
             "service_layer",

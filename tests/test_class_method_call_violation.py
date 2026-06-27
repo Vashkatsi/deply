@@ -1,4 +1,3 @@
-import os
 import shutil
 import sys
 import tempfile
@@ -77,7 +76,7 @@ class TestClassMethodCallViolation(unittest.TestCase):
         self.config_yaml = Path(self.test_dir) / 'config.yaml'
         config_data = {
             'deply': {
-                'paths': ['./test_project'],
+                'paths': [str(self.test_project_dir)],
                 'layers': [
                     {
                         'name': 'models',
@@ -113,26 +112,20 @@ class TestClassMethodCallViolation(unittest.TestCase):
         shutil.rmtree(self.test_dir)
 
     def test_code_analyzer(self):
-        # Change current directory to the test directory
-        old_cwd = os.getcwd()
-        os.chdir(self.test_dir)
-        try:
-            # Capture the output
-            with captured_output() as (out, err):
-                try:
-                    # Run main with the test config
-                    sys.argv = ['main.py', 'analyze', '--config', str(self.config_yaml)]
-                    main()
-                except SystemExit as e:
-                    exit_code = e.code
-            output = out.getvalue()
-            # Check that the exit code is 1 (violations found)
-            self.assertEqual(exit_code, 1)
-            # Check that the output contains the expected violation message
-            self.assertIn("Layer 'views' is not allowed to depend on layer 'models'", output)
-            self.assertIn("Total Violations               17", output)
-        finally:
-            os.chdir(old_cwd)
+        # Capture the output
+        with captured_output() as (out, err):
+            try:
+                # Run main with the test config
+                sys.argv = ['main.py', 'analyze', '--config', str(self.config_yaml)]
+                main()
+            except SystemExit as e:
+                exit_code = e.code
+        output = out.getvalue()
+        # Check that the exit code is 1 (violations found)
+        self.assertEqual(exit_code, 1)
+        # Check that the output contains the expected violation message
+        self.assertIn("Layer 'views' is not allowed to depend on layer 'models'", output)
+        self.assertIn("Total Violations               17", output)
 
 
 if __name__ == '__main__':
