@@ -31,7 +31,11 @@ class TestExternalImportRule(unittest.TestCase):
 
         self.assertIsNotNone(violation)
         self.assertEqual(violation.violation_type, ViolationType.DISALLOWED_EXTERNAL_IMPORT)
+        self.assertEqual(violation.file, self.element.file)
+        self.assertEqual(violation.element_name, "load_user")
+        self.assertEqual(violation.element_type, "function")
         self.assertEqual(violation.line, 1)
+        self.assertEqual(violation.column, 0)
         self.assertIn("external package 'requests'", violation.message)
 
     def test_unconfigured_import_passes(self):
@@ -166,6 +170,16 @@ class TestExternalImportRunner(unittest.TestCase):
             sorted(violation["line"] for violation in payload["violations"]),
             [1, 2],
         )
+        violations_by_line = {
+            violation["line"]: violation
+            for violation in payload["violations"]
+        }
+        self.assertEqual(violations_by_line[1]["element_name"], "load_user")
+        self.assertEqual(violations_by_line[1]["element_type"], "function")
+        self.assertEqual(violations_by_line[1]["column"], 0)
+        self.assertEqual(violations_by_line[2]["element_name"], "load_user")
+        self.assertEqual(violations_by_line[2]["element_type"], "function")
+        self.assertEqual(violations_by_line[2]["column"], 0)
 
     def test_runner_applies_line_suppression(self):
         with tempfile.TemporaryDirectory() as temporary_directory:

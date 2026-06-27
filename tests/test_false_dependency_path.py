@@ -1,4 +1,3 @@
-import os
 import shutil
 import sys
 import tempfile
@@ -52,22 +51,24 @@ class TestFalseDependencyPath(unittest.TestCase):
 
     def run_deply(self, config_data) -> Tuple[int, str]:
         config_path = Path(self.test_dir) / 'deply.yaml'
+        config_for_run = {
+            **config_data,
+            "deply": {
+                **config_data["deply"],
+                "paths": [str(self.test_project_dir)],
+            },
+        }
         with config_path.open('w') as f:
-            yaml.dump(config_data, f)
+            yaml.dump(config_for_run, f)
 
-        old_cwd = os.getcwd()
-        os.chdir(self.test_dir)
-        try:
-            with captured_output() as (out, err):
-                exit_code = 0
-                try:
-                    sys.argv = ['main.py', 'analyze', '--config', str(config_path)]
-                    main()
-                except SystemExit as e:
-                    exit_code = e.code
-            output = out.getvalue()
-        finally:
-            os.chdir(old_cwd)
+        with captured_output() as (out, err):
+            exit_code = 0
+            try:
+                sys.argv = ['main.py', 'analyze', '--config', str(config_path)]
+                main()
+            except SystemExit as e:
+                exit_code = e.code
+        output = out.getvalue()
 
         return exit_code, output
 

@@ -1,5 +1,6 @@
 import argparse
 import io
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,8 +8,10 @@ from unittest.mock import MagicMock, patch
 
 from deply.deply_runner import DeplyRunner, process_file
 from deply.models.code_element import CodeElement
+from deply.models.dependency import Dependency
 from deply.models.violation import Violation
 from deply.models.violation_types import ViolationType
+from deply.rules.dependency_rule import DependencyRule
 
 
 class TestDeplyRunnerArguments(unittest.TestCase):
@@ -112,6 +115,12 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
 
         self.assertFalse(self.runner.is_violation_suppressed(violation))
 
+    def test_is_violation_not_suppressed_when_file_has_no_ignore_map(self):
+        violation = self._build_violation(Path("/tmp/missing_ignore_map.py"), line=20)
+        self.runner.ignore_maps = {}
+
+        self.assertFalse(self.runner.is_violation_suppressed(violation))
+
     def test_output_report_writes_to_file_when_output_path_is_provided(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             output_path = Path(temporary_directory) / "report.txt"
@@ -154,6 +163,63 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
                 self.runner.collect_all_files()
 
         self.assertEqual(self.runner.all_files, [])
+
+    def test_collect_all_files_applies_exclude_patterns_to_relative_paths(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            base_path = Path(temporary_directory)
+            keep_file_path = base_path / "keep.py"
+            ignored_file_path = base_path / "generated" / "ignored.py"
+            ignored_file_path.parent.mkdir()
+            keep_file_path.write_text("class Keep:\n    pass\n")
+            ignored_file_path.write_text("class Ignored:\n    pass\n")
+            self.runner.paths = [base_path]
+            self.runner.exclude_files = [re.compile(r"generated/ignored\.py$")]
+
+            self.runner.collect_all_files()
+
+        self.assertEqual(set(self.runner.all_files), {keep_file_path})
+
+    def test_analyze_dependencies_updates_metrics_violations_and_mermaid_edges(self):
+        source_element = CodeElement(
+            file=Path("views.py"),
+            name="view",
+            element_type="function",
+            line=1,
+            column=0,
+        )
+        target_element = CodeElement(
+            file=Path("models.py"),
+            name="Model",
+            element_type="class",
+            line=1,
+            column=0,
+        )
+        dependency = Dependency(
+            code_element=source_element,
+            depends_on_code_element=target_element,
+            dependency_type="function_call",
+            line=3,
+            column=4,
+        )
+        self.runner.code_element_to_layer = {
+            source_element: "views",
+            target_element: "models",
+        }
+        self.runner.rules = [DependencyRule("views", ["models"])]
+
+        def run_analyzer():
+            analyzer_class.call_args.kwargs["dependency_handler"](dependency)
+
+        with patch("deply.deply_runner.CodeAnalyzer") as analyzer_class:
+            analyzer_class.return_value.analyze.side_effect = run_analyzer
+            with patch.object(self.runner.mermaid_builder, "add_edge") as add_edge:
+                self.runner.analyze_dependencies()
+
+        self.assertEqual(self.runner.metrics["total_dependencies"], 1)
+        self.assertEqual(len(self.runner.violations), 1)
+        violation = next(iter(self.runner.violations))
+        self.assertEqual(violation.dependency, dependency)
+        add_edge.assert_called_once_with("views", "models", True)
 
     def test_collect_code_elements_parallel_branch(self):
         self.runner.layers_config = [{"name": "services_layer"}]
