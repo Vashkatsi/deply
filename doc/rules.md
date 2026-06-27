@@ -33,6 +33,22 @@ ruleset:
         decorator_name_regex: "app.task"
 ```
 
+### External Import Rules
+
+Prevent selected layers from importing configured package roots:
+
+```yaml
+ruleset:
+  domain:
+    disallow_external_imports:
+      - django
+      - sqlalchemy
+      - requests
+```
+
+This flags `import requests` and `from django.db import models` in `domain`.
+Relative project imports such as `from .models import User` are ignored.
+
 ### Class Inheritance Rules
 
 Ensure classes inherit from specific base classes:
@@ -95,6 +111,10 @@ ruleset:
     enforce_function_decorator_usage:
       - type: function_decorator_name_regex
         decorator_name_regex: "app.task"
+  domain:
+    disallow_external_imports:
+      - django
+      - sqlalchemy
 ```
 
 ## Best Practices

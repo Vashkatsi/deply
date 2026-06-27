@@ -2,6 +2,7 @@ import unittest
 
 from deply.rules.bool_rule import BoolRule
 from deply.rules.class_decorator_rule import ClassDecoratorUsageRule
+from deply.rules.external_import_rule import ExternalImportRule
 from deply.rules.function_decorator_rule import FunctionDecoratorUsageRule
 from deply.rules.rule_factory import RuleFactory
 
@@ -25,6 +26,18 @@ class TestRuleFactory(unittest.TestCase):
 
         self.assertIsInstance(function_decorator_rule, FunctionDecoratorUsageRule)
         self.assertIsInstance(class_decorator_rule, ClassDecoratorUsageRule)
+
+    def test_create_rules_for_external_imports(self):
+        rules = RuleFactory.create_rules(
+            {
+                "domain": {
+                    "disallow_external_imports": ["django", "requests"],
+                }
+            }
+        )
+
+        self.assertEqual(len(rules), 1)
+        self.assertIsInstance(rules[0], ExternalImportRule)
 
     def test_create_rule_from_config_for_bool_and_unknown_type(self):
         bool_rule = RuleFactory._create_rule_from_config(

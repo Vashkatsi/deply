@@ -68,6 +68,11 @@ deply:
     views:
       disallow_layer_dependencies:
         - models
+
+    services:
+      disallow_external_imports:
+        - django
+        - requests
 ```
 
 ### Command-Line Usage
@@ -91,6 +96,7 @@ deply --help
 - **Layer-Based Analysis**: Define project layers and restrict their dependencies to enforce modularity.
 - **Dynamic Layer Configuration**: Easily configure collectors for each layer using file patterns, class inheritance, and logical conditions.
 - **Cross-Layer Dependency Rules**: Specify rules to disallow certain layers from accessing others.
+- **External Import Restrictions**: Prevent selected layers from importing framework, persistence, or SDK packages.
 - **Extensible and Configurable**: Customize layers and rules for any Python project setup.
 - **Mermaid Diagrams**: Visualize your architecture and dependencies with Mermaid diagrams.
 - **Error Suppression**: Suppress specific rule violations with inline comments.
@@ -102,6 +108,7 @@ Deply provides options to suppress rule violations using comments in your code:
 ```python
 # Line-level suppression
 user.get()  # deply:ignore:DISALLOW_LAYER_DEPENDENCIES
+import requests  # deply:ignore:DISALLOWED_EXTERNAL_IMPORT
 
 # File-level suppression (at the top of the file)
 # deply:ignore-file:ENFORCE_INHERITANCE
@@ -144,7 +151,8 @@ A plan to evolve Deply into a must-have architectural guardian for Python projec
   🔲 Dependency graph caching  
   🔲 Custom rules system  
   🔲 FastAPI/Django/Flask presets  
-  🔲 Third-party import restrictions (`disallow_external_imports`)  
+  🔲 LLM skill creation helpers
+  ✅ Third-party import restrictions (`disallow_external_imports`)
 
 ## Further Documentation
 - [Core Concepts](https://vashkatsi.github.io/deply/doc/features.html) - Explains layers, rules and violations in more details.

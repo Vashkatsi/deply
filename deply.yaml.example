@@ -53,6 +53,11 @@ deply:
       disallow_layer_dependencies:
         - models
 
+    services:
+      disallow_external_imports:
+        - django
+        - requests
+
     tasks:
       enforce_function_decorator_usage:
         - type: function_decorator_name_regex

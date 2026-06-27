@@ -7,6 +7,7 @@ from .class_decorator_rule import ClassDecoratorUsageRule
 from .function_decorator_rule import FunctionDecoratorUsageRule
 from .inheritance_rule import InheritanceRule
 from .bool_rule import BoolRule
+from .external_import_rule import ExternalImportRule
 
 
 class RuleFactory:
@@ -26,6 +27,10 @@ class RuleFactory:
             disallowed = layer_rules.get("disallow_layer_dependencies")
             if disallowed:
                 rules.append(DependencyRule(layer_name, disallowed))
+
+            disallowed_external_imports = layer_rules.get("disallow_external_imports")
+            if disallowed_external_imports:
+                rules.append(ExternalImportRule(layer_name, disallowed_external_imports))
 
             rules.extend(
                 RuleFactory._collect_rules_for_key(layer_name, layer_rules, "enforce_class_naming")

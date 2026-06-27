@@ -3,6 +3,7 @@ from enum import Enum
 
 class ViolationType(Enum):
     DISALLOWED_DEPENDENCY = ("disallowed_dependency", "Disallowed Dependency")
+    DISALLOWED_EXTERNAL_IMPORT = ("disallowed_external_import", "Disallowed External Import")
     FUNCTION_DECORATOR_USAGE = ("function_decorator_usage", "Function Decorator Usage")
     CLASS_DECORATOR_USAGE = ("class_decorator_usage", "Class Decorator Usage")
     CLASS_NAMING = ("class_naming", "Class Naming")
