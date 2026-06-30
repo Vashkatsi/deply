@@ -18,6 +18,14 @@ The main command for analyzing your project:
 deply analyze
 ```
 
+### Validate Command
+
+Validate your configuration without analyzing project files:
+
+```bash
+deply validate
+```
+
 ### Help Command
 
 Display help information:
@@ -31,11 +39,15 @@ deply --help
 ### Analyze Command Options
 
 - `--config`: Path to the configuration YAML file (default: `deply.yaml`)
-- `--report-format`: Format of the output report (choices: `text`, `json`, `html`, default: `text`)
+- `--report-format`: Format of the output report (choices: `text`, `json`, `github-actions`, default: `text`)
 - `--output`: Output file for the report (if not specified, prints to console)
 - `--mermaid`: Generates a Mermaid diagram of layer dependencies
 - `--max-violations`: Maximum number of allowed violations before failing (default: 0)
 - `--parallel`: Enable parallel processing of code elements
+
+### Validate Command Options
+
+- `--config`: Path to the configuration YAML file (default: `deply.yaml`)
 
 ## Examples
 
@@ -51,10 +63,16 @@ deply analyze
 deply analyze --config=custom_config.yaml
 ```
 
-### Generate HTML Report
+### Validate Configuration
 
 ```bash
-deply analyze --report-format=html --output=report.html
+deply validate --config=custom_config.yaml
+```
+
+### Generate GitHub Actions Report
+
+```bash
+deply analyze --report-format=github-actions
 ```
 
 ### Generate Mermaid Diagram
@@ -100,10 +118,6 @@ The JSON format provides structured data that can be easily parsed by other tool
   ]
 }
 ```
-
-### HTML Format
-
-The HTML format provides a formatted report that can be viewed in a web browser, with syntax highlighting and better readability.
 
 For more information about:
 - Mermaid diagrams, see the [Mermaid Diagrams](mermaid.html) documentation

@@ -30,7 +30,7 @@ When you have this file, you can analyse your code by running the analyze comman
 deply analyze
 
 # which is equivalent to
-deply analyze --config-file=deply.yaml
+deply analyze --config=deply.yaml
 ```
 
 In order to run Deply you need at least Python 3.8.
@@ -84,6 +84,9 @@ deply analyze
 # With a specific config file
 deply analyze --config=custom_config.yaml
 
+# Validate configuration only
+deply validate --config=custom_config.yaml
+
 # Generate a Mermaid diagram
 deply analyze --mermaid
 
@@ -100,6 +103,7 @@ deply --help
 - **Extensible and Configurable**: Customize layers and rules for any Python project setup.
 - **Mermaid Diagrams**: Visualize your architecture and dependencies with Mermaid diagrams.
 - **Error Suppression**: Suppress specific rule violations with inline comments.
+- **Config Validation**: Validate `deply.yaml` without running project analysis.
 
 ## Error Suppression
 
@@ -145,7 +149,7 @@ A plan to evolve Deply into a must-have architectural guardian for Python projec
   🔲 Interactive config setup (`deply init` wizard)  
   🔲 GitHub Actions/GitLab CI templates  
   ✅ `# deply:ignore` suppression comments  
-  🔲 Config validation command (`deply validate`)  
+  ✅ Config validation command (`deply validate`)
   ✅ Parallel file analysis  
   ✅ Custom collectors system  
   🔲 Dependency graph caching  

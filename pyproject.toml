@@ -18,7 +18,9 @@ show_error_codes = true
 pretty = true
 
 [tool.mutmut]
-paths_to_mutate = [
+source_paths = [
+    "deply/main.py",
+    "deply/config_validator.py",
     "deply/deply_runner.py",
     "deply/utils/dependency_visitor.py",
     "deply/rules/",
