@@ -3,3 +3,4 @@ include LICENSE
 include requirements.txt
 include config_example.yaml
 recursive-include deply/rules *.py
+recursive-include skills *

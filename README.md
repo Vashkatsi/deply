@@ -94,6 +94,18 @@ deply analyze --mermaid
 deply --help
 ```
 
+## Agent Skill
+
+Deply v1.0.0 includes a portable Agent Skill at `skills/deply-config/` for Codex, Claude Code, and other Agent Skills-compatible assistants. It helps an assistant inspect a Python project, generate `deply.yaml` with `light`, `medium`, or `strict` architecture rules, validate it with `deply validate`, run analysis, and add Makefile/CI/docs integration.
+
+Use it with:
+
+```text
+Use $deply-config to create and validate a Deply architecture config for this Python project.
+```
+
+See [Agent Skill](https://vashkatsi.github.io/deply/doc/skills.html) for installation instructions.
+
 ## Features
 
 - **Layer-Based Analysis**: Define project layers and restrict their dependencies to enforce modularity.
@@ -155,7 +167,7 @@ A plan to evolve Deply into a must-have architectural guardian for Python projec
   🔲 Dependency graph caching  
   🔲 Custom rules system  
   🔲 FastAPI/Django/Flask presets  
-  🔲 LLM skill creation helpers
+  ✅ LLM skill creation helpers
   ✅ Third-party import restrictions (`disallow_external_imports`)
 
 ## Further Documentation
@@ -165,6 +177,7 @@ A plan to evolve Deply into a must-have architectural guardian for Python projec
 - [Rules](https://vashkatsi.github.io/deply/doc/rules.html) - Lists the different rule types supported by Deply
 - [Mermaid Diagrams](https://vashkatsi.github.io/deply/doc/mermaid.html) - Overview of the diagram generation capabilities
 - [Command Line Interface](https://vashkatsi.github.io/deply/doc/cli.html) - Advice for using the CLI
+- [Agent Skill](https://vashkatsi.github.io/deply/doc/skills.html) - Install and use the Deply Config Agent Skill
 
 ## Author
 

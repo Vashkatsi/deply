@@ -21,11 +21,19 @@ pip install deply
 After installation, you can start using Deply by following these steps:
 
 1. Create a configuration file named `deply.yaml` in your project root
-2. Run the analysis command:
+2. Validate the configuration:
+
+```bash
+deply validate --config=deply.yaml
+```
+
+3. Run the analysis command:
 
 ```bash
 deply analyze
 ```
+
+You can also use the [Deply Config Agent Skill](skills.html) with Codex, Claude Code, or another Agent Skills-compatible assistant to generate the configuration interactively.
 
 ## Configuration
 

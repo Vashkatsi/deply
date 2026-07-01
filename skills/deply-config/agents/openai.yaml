@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deply Config"
+  short_description: "Generate Deply architecture configs"
+  default_prompt: "Use $deply-config to create and validate a Deply architecture config for this Python project."
