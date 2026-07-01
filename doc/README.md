@@ -51,6 +51,11 @@ Welcome to the Deply documentation! This documentation will help you understand 
    - Output Formats
    - Examples
 
+8. [Agent Skill]({{ site.baseurl }}/doc/skills.html)
+   - Codex and Claude Code installation
+   - Config generation workflow
+   - CI integration
+
 ## About Deply
 
 Deply is a standalone Python tool for enforcing architectural patterns and dependencies in large Python projects. By analyzing code structure and dependencies, this tool ensures that architectural rules are followed, promoting cleaner, more maintainable, and modular codebases.
