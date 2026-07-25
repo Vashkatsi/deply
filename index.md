@@ -26,6 +26,7 @@ Welcome to the Deply documentation! This documentation will help you understand 
    - Configuration File Structure
    - Layer Definitions
    - Rules and Collectors
+   - [Architecture Styles]({{ site.baseurl }}/doc/architectures.html)
    - Examples
 
 4. [Collectors Reference]({{ site.baseurl }}/doc/collectors.html)

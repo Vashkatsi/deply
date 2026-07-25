@@ -2,6 +2,7 @@
 layout: default
 title: Configuration
 nav_order: 4
+has_children: true
 ---
 
 # Configuration Guide
@@ -73,6 +74,24 @@ ruleset:
 ### Collectors
 
 Collectors define how code elements are collected into layers. See the [Collectors Reference](collectors.html) for detailed information about each collector type.
+
+## Framework Configuration Recipes
+
+Use these editable starting points for common Python web frameworks:
+
+- [FastAPI](fastapi.html)
+- [Django](django.html)
+- [Flask](flask.html)
+
+These recipes use the existing Deply configuration schema. They are not
+built-in presets and should be adapted to the project's actual directories and
+architecture.
+
+## Architecture and Pattern Recipes
+
+Use the [Architecture Styles](architectures.html) catalog to choose and enforce
+layered, inward-dependency, modular, feature-oriented, data, messaging, and
+presentation boundaries.
 
 ## Validate Configuration
 

@@ -116,6 +116,7 @@ See [Agent Skill](https://vashkatsi.github.io/deply/doc/skills.html) for install
 - **Mermaid Diagrams**: Visualize your architecture and dependencies with Mermaid diagrams.
 - **Error Suppression**: Suppress specific rule violations with inline comments.
 - **Config Validation**: Validate `deply.yaml` without running project analysis.
+- **Architecture Recipes**: Start from validated configurations for 21 architecture and application patterns.
 
 ## Error Suppression
 
@@ -166,7 +167,8 @@ A plan to evolve Deply into a must-have architectural guardian for Python projec
   ✅ Custom collectors system  
   🔲 Dependency graph caching  
   🔲 Custom rules system  
-  🔲 FastAPI/Django/Flask presets  
+  ✅ FastAPI/Django/Flask configuration recipes
+  ✅ Architecture and application pattern recipes
   ✅ LLM skill creation helpers
   ✅ Third-party import restrictions (`disallow_external_imports`)
 
@@ -178,6 +180,10 @@ A plan to evolve Deply into a must-have architectural guardian for Python projec
 - [Mermaid Diagrams](https://vashkatsi.github.io/deply/doc/mermaid.html) - Overview of the diagram generation capabilities
 - [Command Line Interface](https://vashkatsi.github.io/deply/doc/cli.html) - Advice for using the CLI
 - [Agent Skill](https://vashkatsi.github.io/deply/doc/skills.html) - Install and use the Deply Config Agent Skill
+- [Architecture Styles](https://vashkatsi.github.io/deply/doc/architectures.html) - Compare 21 architecture and application pattern recipes
+- [FastAPI](https://vashkatsi.github.io/deply/doc/fastapi.html) - Configure layered FastAPI boundaries
+- [Django](https://vashkatsi.github.io/deply/doc/django.html) - Configure Django model, view, and domain boundaries
+- [Flask](https://vashkatsi.github.io/deply/doc/flask.html) - Configure Flask route, blueprint, and persistence boundaries
 
 ## Author
 
