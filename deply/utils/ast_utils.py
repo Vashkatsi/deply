@@ -1,5 +1,15 @@
 import ast
-from typing import Dict, Optional
+import tokenize
+from io import BytesIO
+from pathlib import Path
+from typing import Dict, Optional, Tuple
+
+
+def parse_python_file(file_path: Path) -> Tuple[ast.AST, bytes]:
+    file_bytes = file_path.read_bytes()
+    encoding, _ = tokenize.detect_encoding(BytesIO(file_bytes).readline)
+    source_code = file_bytes.decode(encoding)
+    return ast.parse(source_code, filename=str(file_path)), file_bytes
 
 
 def get_import_aliases(tree: ast.AST) -> Dict[str, str]:

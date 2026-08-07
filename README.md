@@ -95,7 +95,9 @@ deply --help
 ```
 
 `deply analyze` validates the configuration before scanning project files and
-exits with status `1` when the configuration is invalid.
+exits with status `1` when the configuration is invalid or analysis is
+incomplete because files cannot be read or parsed, no Python files are found,
+or no code elements map to configured layers.
 
 ## Agent Skill
 

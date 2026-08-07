@@ -1,4 +1,5 @@
 import argparse
+import codecs
 import io
 import re
 import tempfile
@@ -6,6 +7,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import yaml
+
+from deply.code_analyzer import CodeAnalyzer
 from deply.deply_runner import DeplyRunner, process_file
 from deply.models.code_element import CodeElement
 from deply.models.dependency import Dependency
@@ -51,6 +55,31 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             max_violations=0,
         )
         self.runner = DeplyRunner(self.args)
+
+    def _write_config(self, project_path: Path, collector_regex: str = r".*\.py$") -> Path:
+        config_path = project_path.parent / "deply.yaml"
+        config_path.write_text(
+            yaml.dump(
+                {
+                    "deply": {
+                        "paths": [str(project_path)],
+                        "layers": [
+                            {
+                                "name": "application",
+                                "collectors": [
+                                    {
+                                        "type": "file_regex",
+                                        "regex": collector_regex,
+                                    }
+                                ],
+                            }
+                        ],
+                        "ruleset": {},
+                    }
+                }
+            )
+        )
+        return config_path
 
     def _build_violation(self, file_path: Path, line: int = 1) -> Violation:
         return Violation(
@@ -120,6 +149,9 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
         self.runner.ignore_maps = {}
 
         self.assertFalse(self.runner.is_violation_suppressed(violation))
+
+    def test_analysis_is_complete_without_errors(self):
+        self.assertTrue(self.runner.is_analysis_complete())
 
     def test_output_report_writes_to_file_when_output_path_is_provided(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -209,6 +241,7 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
 
         def run_analyzer():
             analyzer_class.call_args.kwargs["dependency_handler"](dependency)
+            return []
 
         with patch("deply.deply_runner.CodeAnalyzer") as analyzer_class:
             analyzer_class.return_value.analyze.side_effect = run_analyzer
@@ -240,6 +273,7 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             "service.py",
             [("services_layer", collected_element)],
             {"file": set(), "lines": {}},
+            None,
         )
 
         executor_mock = MagicMock()
@@ -259,19 +293,138 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
         self.assertEqual(self.runner.code_element_to_layer[collected_element], "services_layer")
         self.assertIn("service.py", self.runner.ignore_maps)
 
-    def test_process_file_returns_empty_results_on_syntax_error(self):
+    def test_process_file_reports_syntax_error(self):
         with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as temporary_file:
             temporary_file.write("def invalid(:\n")
             invalid_file_path = Path(temporary_file.name)
 
         try:
-            processed_file_path, processed_results, processed_ignore_map = process_file(invalid_file_path, [])
+            processed_file_path, processed_results, processed_ignore_map, analysis_error = process_file(
+                invalid_file_path,
+                [],
+            )
         finally:
             invalid_file_path.unlink(missing_ok=True)
 
         self.assertEqual(processed_file_path, str(invalid_file_path))
         self.assertEqual(processed_results, [])
         self.assertEqual(processed_ignore_map, {"file": set(), "lines": {}})
+        self.assertIn(f"failed to analyze {invalid_file_path}:", analysis_error)
+
+    def test_process_file_reports_ignore_tokenization_error(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as temporary_file:
+            temporary_file.write("# coding: no-such-codec\ndef service():\n    pass\n")
+            invalid_file_path = Path(temporary_file.name)
+
+        try:
+            _, _, _, analysis_error = process_file(invalid_file_path, [])
+        finally:
+            invalid_file_path.unlink(missing_ok=True)
+
+        self.assertIn(f"failed to analyze {invalid_file_path}:", analysis_error)
+
+    def test_run_fails_when_no_python_files_are_found(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "project"
+            project_path.mkdir()
+            self.runner.args.config = str(self._write_config(project_path))
+
+            with patch("sys.stderr", new=io.StringIO()) as error_stream:
+                result = self.runner.run()
+
+        self.assertFalse(result)
+        self.assertIn("Incomplete analysis:\n- no Python files found", error_stream.getvalue())
+
+    def test_run_fails_when_no_elements_map_to_a_layer(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "project"
+            project_path.mkdir()
+            (project_path / "service.py").write_text("def service():\n    pass\n")
+            self.runner.args.config = str(self._write_config(project_path, r"never-matches"))
+
+            with patch("sys.stderr", new=io.StringIO()) as error_stream:
+                result = self.runner.run()
+
+        self.assertFalse(result)
+        self.assertEqual(
+            error_stream.getvalue(),
+            "Incomplete analysis:\n- no code elements mapped to configured layers\n",
+        )
+
+    def test_run_fails_on_parse_error_in_sequential_and_parallel_modes(self):
+        for parallel in (None, 2):
+            with self.subTest(parallel=parallel), tempfile.TemporaryDirectory() as temporary_directory:
+                project_path = Path(temporary_directory) / "project"
+                project_path.mkdir()
+                invalid_file_path = project_path / "invalid.py"
+                invalid_file_path.write_text("def invalid(:\n")
+                self.runner = DeplyRunner(
+                    argparse.Namespace(
+                        config=str(self._write_config(project_path)),
+                        parallel=parallel,
+                        report_format="text",
+                        output=None,
+                        mermaid=False,
+                        max_violations=0,
+                    )
+                )
+
+                with patch("os.cpu_count", return_value=2), patch(
+                    "sys.stderr",
+                    new=io.StringIO(),
+                ) as error_stream:
+                    result = self.runner.run()
+
+            self.assertFalse(result)
+            self.assertEqual(self.runner.workers_count, 1 if parallel is None else 2)
+            self.assertIn(f"failed to analyze {invalid_file_path}:", error_stream.getvalue())
+
+    def test_run_accepts_python_source_encodings_in_sequential_and_parallel_modes(self):
+        source_files = {
+            "pep263": "# coding: latin-1\nclass Café:\n    pass\n".encode("latin-1"),
+            "utf8_bom": codecs.BOM_UTF8 + b"class Service:\n    pass\n",
+        }
+        for source_name, source_bytes in source_files.items():
+            for parallel in (None, 2):
+                with self.subTest(source=source_name, parallel=parallel), tempfile.TemporaryDirectory() as directory:
+                    project_path = Path(directory) / "project"
+                    project_path.mkdir()
+                    (project_path / "service.py").write_bytes(source_bytes)
+                    runner = DeplyRunner(
+                        argparse.Namespace(
+                            config=str(self._write_config(project_path)),
+                            parallel=parallel,
+                            report_format="text",
+                            output=None,
+                            mermaid=False,
+                            max_violations=0,
+                        )
+                    )
+
+                    with patch("os.cpu_count", return_value=2), patch("sys.stdout", new=io.StringIO()), patch(
+                        "sys.stderr",
+                        new=io.StringIO(),
+                    ):
+                        result = runner.run()
+
+                self.assertTrue(result)
+                self.assertEqual(runner.analysis_errors, [])
+
+    def test_code_analyzer_reports_files_that_cannot_be_read(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            missing_file = Path(temporary_directory) / "missing.py"
+            code_element = CodeElement(
+                file=missing_file,
+                name="service",
+                element_type="function",
+                line=1,
+                column=0,
+            )
+
+            errors = CodeAnalyzer({code_element}, lambda dependency: None).analyze()
+
+        self.assertEqual(len(errors), 1)
+        self.assertIn(f"failed to analyze {missing_file}:", errors[0])
 
 
 if __name__ == "__main__":

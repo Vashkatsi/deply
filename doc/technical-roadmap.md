@@ -47,11 +47,10 @@ assessment reflects the codebase on 2026-08-07.
    orthogonal tags and migrate the recipe. Document ordering only if last-match
    precedence remains part of the public contract.
 
-5. **Fail on incomplete analysis.** Parsing and reading failures are currently
-   skipped, and reports contain only violations. Track and report analyzed,
-   excluded, unmapped, overlapping, unresolved, and failed files/elements. Fail by
-   default when files cannot be analyzed, no Python files are found, or no elements
-   map to any layer.
+5. **Fail on incomplete analysis — resolved.** Collection and dependency-analysis
+   read or parse failures are reported and make analysis fail. Analysis also fails
+   when no Python files are found or no elements map to configured layers. Detailed
+   completeness metrics remain a separate delivery item.
 
 ### P1: improve adoption after correctness
 
@@ -139,10 +138,10 @@ invalid path before validation preflight: `deply validate` exit 1; `deply analyz
 Relevant implementation points:
 
 - `deply/main.py`: explicit validation and analysis use the same validation preflight.
-- `deply/deply_runner.py`: missing paths and parse failures are skipped; layer
-  ownership is stored as one string; only collection uses the process pool.
-- `deply/code_analyzer.py`: files are read and parsed again and the global index is
-  keyed by element name.
+- `deply/deply_runner.py`: incomplete collection fails analysis; layer ownership
+  is stored as one string; only collection uses the process pool.
+- `deply/code_analyzer.py`: files are read and parsed again, failures are returned
+  to the runner, and the global index is keyed by element name.
 - `deply/utils/dependency_visitor.py`: async and sync functions share recursive
   scope handling; functions and classes restore their enclosing element.
 - `deply/reports/formats/json_report.py`: reports expose violations only, without
@@ -154,7 +153,7 @@ Each item should be a separate change with focused regression tests:
 
 1. ~~Harden configuration validation.~~ Resolved.
 2. ~~Require validation before analysis.~~ Resolved.
-3. Fail on incomplete analysis.
+3. ~~Fail on incomplete analysis.~~ Resolved.
 4. ~~Fix async and nested-scope correctness.~~ Resolved.
 5. Define layer ownership and overlap semantics.
 6. Build the module-aware, scope-aware resolver.

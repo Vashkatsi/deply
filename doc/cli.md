@@ -19,7 +19,9 @@ deply analyze
 ```
 
 Analysis validates the configuration first and exits with status `1` without
-scanning project files when validation fails.
+scanning project files when validation fails. It also exits with status `1`
+when files cannot be read or parsed, no Python files are found, or no code
+elements map to configured layers.
 
 ### Validate Command
 
