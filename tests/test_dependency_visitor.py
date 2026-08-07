@@ -268,6 +268,105 @@ class TestDependencyVisitor(unittest.TestCase):
         self.assertEqual(dependency.line, 3)
         self.assertEqual(dependency.column, 11)
 
+    def _collect_function_calls(self, source_code, source_elements, target_names):
+        syntax_tree = ast.parse(textwrap.dedent(source_code))
+        set_ast_parents(syntax_tree)
+        captured_dependencies = []
+        visitor = DependencyVisitor(
+            code_elements_in_file={
+                name: self._build_code_element(name, element_type)
+                for name, element_type in source_elements.items()
+            },
+            dependency_types=["function_call"],
+            dependency_handler=captured_dependencies.append,
+            name_to_elements={
+                name: {self._build_code_element(name)}
+                for name in target_names
+            },
+        )
+        visitor.visit(syntax_tree)
+        return {
+            (dependency.code_element.name, dependency.depends_on_code_element.name)
+            for dependency in captured_dependencies
+        }
+
+    def test_visit_async_function_attributes_dependency_to_async_function(self):
+        actual_dependencies = self._collect_function_calls(
+            """
+            async def handler():
+                target()
+            """,
+            source_elements={"handler": "function"},
+            target_names=("target",),
+        )
+
+        self.assertEqual(actual_dependencies, {("handler", "target")})
+
+    def test_nested_function_scopes_restore_enclosing_function(self):
+        actual_dependencies = self._collect_function_calls(
+            """
+            def outer():
+                async def async_inner():
+                    async_target()
+                middle_target()
+                def inner():
+                    inner_target()
+                after_target()
+            """,
+            source_elements={
+                "outer": "function",
+                "outer.async_inner": "function",
+                "outer.inner": "function",
+            },
+            target_names=("async_target", "middle_target", "inner_target", "after_target"),
+        )
+
+        self.assertEqual(
+            actual_dependencies,
+            {
+                ("outer.async_inner", "async_target"),
+                ("outer", "middle_target"),
+                ("outer.inner", "inner_target"),
+                ("outer", "after_target"),
+            },
+        )
+
+    def test_uncollected_nested_function_does_not_inherit_outer_scope(self):
+        actual_dependencies = self._collect_function_calls(
+            """
+            def outer():
+                def uncollected():
+                    hidden_target()
+                visible_target()
+            """,
+            source_elements={"outer": "function"},
+            target_names=("hidden_target", "visible_target"),
+        )
+
+        self.assertEqual(actual_dependencies, {("outer", "visible_target")})
+
+    def test_nested_class_scope_restores_enclosing_class(self):
+        actual_dependencies = self._collect_function_calls(
+            """
+            class Outer:
+                before_target()
+                class Inner:
+                    inner_target()
+                after_target()
+            """,
+            source_elements={"Outer": "class", "Outer.Inner": "class"},
+            target_names=("before_target", "inner_target", "after_target"),
+        )
+
+        self.assertEqual(
+            actual_dependencies,
+            {
+                ("Outer", "before_target"),
+                ("Outer.Inner", "inner_target"),
+                ("Outer", "after_target"),
+            },
+        )
+
     def test_get_full_name_handles_subscript_constant_index_and_fallback(self):
         visitor = DependencyVisitor(
             code_elements_in_file={},

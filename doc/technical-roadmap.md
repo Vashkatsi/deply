@@ -20,12 +20,11 @@ assessment reflects the codebase on 2026-08-07.
    unknown collector fields, and invalid `element_type` values. Analysis must fail
    before collecting files when the hardened validation fails.
 
-2. **Support async and nested scopes correctly.** Collectors recognize
-   `AsyncFunctionDef`, but `DependencyVisitor` has no corresponding visitor.
-   Dependencies in top-level async functions are missed; a nested async function
-   can instead be attributed to its enclosing sync function. The single mutable
-   `current_code_element` also loses the enclosing scope after visiting a nested
-   definition. Use shared function handling with a scope stack.
+2. **Support async and nested scopes correctly — resolved.** `DependencyVisitor`
+   now routes `FunctionDef` and `AsyncFunctionDef` through shared handling and
+   restores the previous code element after nested functions and classes. Top-level
+   async dependencies use their own element, while uncollected nested scopes remain
+   unattributed instead of leaking into their parent.
 
 3. **Replace global name matching with module-aware resolution.** The dependency
    index is keyed by unqualified element name. Import aliases are missed and equal
@@ -127,7 +126,7 @@ assessment reflects the codebase on 2026-08-07.
 
 ## Verified evidence
 
-The following probes reproduced current failure modes:
+Before the scoped async/nested-scope fix, probes reproduced these failure modes:
 
 ```text
 sync function dependency: detected
@@ -145,7 +144,8 @@ Relevant implementation points:
   ownership is stored as one string; only collection uses the process pool.
 - `deply/code_analyzer.py`: files are read and parsed again and the global index is
   keyed by element name.
-- `deply/utils/dependency_visitor.py`: no async-function visitor and no scope stack.
+- `deply/utils/dependency_visitor.py`: async and sync functions share recursive
+  scope handling; functions and classes restore their enclosing element.
 - `deply/reports/formats/json_report.py`: reports expose violations only, without
   analysis completeness metrics.
 
@@ -156,7 +156,7 @@ Each item should be a separate change with focused regression tests:
 1. Harden configuration validation.
 2. Require validation before analysis.
 3. Fail on incomplete analysis.
-4. Fix async and nested-scope correctness.
+4. ~~Fix async and nested-scope correctness.~~ Resolved.
 5. Define layer ownership and overlap semantics.
 6. Build the module-aware, scope-aware resolver.
 7. Add completeness metrics and stable violation fingerprints.

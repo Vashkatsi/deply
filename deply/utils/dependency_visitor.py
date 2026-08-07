@@ -22,57 +22,69 @@ class DependencyVisitor(ast.NodeVisitor):
         logging.debug(f"DependencyVisitor created for file with {len(code_elements_in_file)} code elements")
 
     def visit_FunctionDef(self, node):
+        self._visit_function_definition(node)
+
+    def visit_AsyncFunctionDef(self, node):
+        self._visit_function_definition(node)
+
+    def _visit_function_definition(self, node):
+        previous_code_element = self.current_code_element
         full_name = self._get_definition_full_name(node)
         self.current_code_element = self.code_elements_in_file.get(full_name)
-        if 'decorator' in self.dependency_types and self.current_code_element:
-            self._process_decorators(node)
-        if 'type_annotation' in self.dependency_types and self.current_code_element:
-            if node.returns:
-                self._process_annotation(node.returns)
-            for arg in node.args.args + node.args.kwonlyargs:
-                if arg.annotation:
-                    self._process_annotation(arg.annotation)
-        self.generic_visit(node)
-        self.current_code_element = None
+        try:
+            if 'decorator' in self.dependency_types and self.current_code_element:
+                self._process_decorators(node)
+            if 'type_annotation' in self.dependency_types and self.current_code_element:
+                if node.returns:
+                    self._process_annotation(node.returns)
+                for arg in node.args.args + node.args.kwonlyargs:
+                    if arg.annotation:
+                        self._process_annotation(arg.annotation)
+            self.generic_visit(node)
+        finally:
+            self.current_code_element = previous_code_element
 
     def visit_ClassDef(self, node):
+        previous_code_element = self.current_code_element
         full_name = self._get_definition_full_name(node)
         self.current_code_element = self.code_elements_in_file.get(full_name)
-        if 'class_inheritance' in self.dependency_types and self.current_code_element:
-            for base in node.bases:
-                base_name = self._get_full_name(base)
-                if base_name is None:
-                    continue
-                dep_elements = self.name_to_elements.get(base_name, set())
-                for dep_element in dep_elements:
-                    dependency = Dependency(
-                        code_element=self.current_code_element,
-                        depends_on_code_element=dep_element,
-                        dependency_type='class_inheritance',
-                        line=base.lineno,
-                        column=base.col_offset
-                    )
-                    self.dependency_handler(dependency)
-        if 'decorator' in self.dependency_types and self.current_code_element:
-            self._process_decorators(node)
-        if 'metaclass' in self.dependency_types and self.current_code_element:
-            for keyword in node.keywords:
-                if keyword.arg == 'metaclass':
-                    metaclass_name = self._get_full_name(keyword.value)
-                    if metaclass_name is None:
+        try:
+            if 'class_inheritance' in self.dependency_types and self.current_code_element:
+                for base in node.bases:
+                    base_name = self._get_full_name(base)
+                    if base_name is None:
                         continue
-                    dep_elements = self.name_to_elements.get(metaclass_name, set())
+                    dep_elements = self.name_to_elements.get(base_name, set())
                     for dep_element in dep_elements:
                         dependency = Dependency(
                             code_element=self.current_code_element,
                             depends_on_code_element=dep_element,
-                            dependency_type='metaclass',
-                            line=keyword.value.lineno,
-                            column=keyword.value.col_offset
+                            dependency_type='class_inheritance',
+                            line=base.lineno,
+                            column=base.col_offset
                         )
                         self.dependency_handler(dependency)
-        self.generic_visit(node)
-        self.current_code_element = None
+            if 'decorator' in self.dependency_types and self.current_code_element:
+                self._process_decorators(node)
+            if 'metaclass' in self.dependency_types and self.current_code_element:
+                for keyword in node.keywords:
+                    if keyword.arg == 'metaclass':
+                        metaclass_name = self._get_full_name(keyword.value)
+                        if metaclass_name is None:
+                            continue
+                        dep_elements = self.name_to_elements.get(metaclass_name, set())
+                        for dep_element in dep_elements:
+                            dependency = Dependency(
+                                code_element=self.current_code_element,
+                                depends_on_code_element=dep_element,
+                                dependency_type='metaclass',
+                                line=keyword.value.lineno,
+                                column=keyword.value.col_offset
+                            )
+                            self.dependency_handler(dependency)
+            self.generic_visit(node)
+        finally:
+            self.current_code_element = previous_code_element
 
     def visit_Call(self, node):
         if 'function_call' in self.dependency_types and self.current_code_element:
