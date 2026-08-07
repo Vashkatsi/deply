@@ -172,6 +172,9 @@ A plan to evolve Deply into a must-have architectural guardian for Python projec
   ✅ LLM skill creation helpers
   ✅ Third-party import restrictions (`disallow_external_imports`)
 
+See the [verified technical roadmap](doc/technical-roadmap.md) for priorities,
+evidence, and implementation conditions.
+
 ## Further Documentation
 - [Core Concepts](https://vashkatsi.github.io/deply/doc/features.html) - Explains layers, rules and violations in more details.
 - [Configuration](https://vashkatsi.github.io/deply/doc/configuration.html) - Reference for all available settings in a depfile
