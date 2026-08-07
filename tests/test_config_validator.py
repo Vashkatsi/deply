@@ -53,13 +53,25 @@ class TestConfigValidator(unittest.TestCase):
                         "collectors": [
                             {
                                 "type": "bool",
+                                "exclude_files_regex": r".*generated.*",
                                 "must": [
                                     {
                                         "type": "directory",
                                         "directories": ["app"],
+                                        "element_type": "class",
                                     }
                                 ],
-                            }
+                            },
+                            {
+                                "type": "directory",
+                                "directories": ["app"],
+                                "element_type": "function",
+                            },
+                            {
+                                "type": "directory",
+                                "directories": ["app"],
+                                "element_type": "variable",
+                            },
                         ],
                     },
                 ],
@@ -80,6 +92,87 @@ class TestConfigValidator(unittest.TestCase):
             errors = ConfigValidator(project_path / "deply.yaml").validate(config)
 
         self.assertEqual(errors, [])
+
+    def test_reports_file_valued_analysis_path(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            source_file = project_path / "module.py"
+            source_file.write_text("")
+            config = {
+                "paths": [str(source_file)],
+                "exclude_files": [],
+                "layers": [
+                    {
+                        "name": "domain",
+                        "collectors": [
+                            {
+                                "type": "file_regex",
+                                "regex": ".*",
+                            }
+                        ],
+                    }
+                ],
+                "ruleset": {},
+            }
+
+            errors = ConfigValidator(project_path / "deply.yaml").validate(config)
+
+        self.assertIn(f"paths[0]: path is not a directory: {source_file}", errors)
+
+    def test_reports_unknown_collector_fields(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            config = {
+                "paths": [str(project_path)],
+                "exclude_files": [],
+                "layers": [
+                    {
+                        "name": "domain",
+                        "collectors": [
+                            {
+                                "type": "file_regex",
+                                "regex": ".*",
+                                "unexpected": True,
+                            }
+                        ],
+                    }
+                ],
+                "ruleset": {},
+            }
+
+            errors = ConfigValidator(project_path / "deply.yaml").validate(config)
+
+        self.assertIn("layers[0].collectors[0].unexpected: unknown key", errors)
+
+    def test_reports_invalid_collector_element_types(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            for element_type in ("module", "", None, 1, [], {}):
+                with self.subTest(element_type=element_type):
+                    config = {
+                        "paths": [str(project_path)],
+                        "exclude_files": [],
+                        "layers": [
+                            {
+                                "name": "domain",
+                                "collectors": [
+                                    {
+                                        "type": "directory",
+                                        "directories": ["domain"],
+                                        "element_type": element_type,
+                                    }
+                                ],
+                            }
+                        ],
+                        "ruleset": {},
+                    }
+
+                    errors = ConfigValidator(project_path / "deply.yaml").validate(config)
+
+                    self.assertIn(
+                        "layers[0].collectors[0].element_type: must be one of class, function, variable",
+                        errors,
+                    )
 
     def test_reports_empty_layers(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -272,6 +365,7 @@ class TestConfigValidator(unittest.TestCase):
                                 {
                                     "type": "custom",
                                     "class": f"{module_name}.DummyCustomCollector",
+                                    "exclude_files_regex": r".*generated.*",
                                 }
                             ],
                         }

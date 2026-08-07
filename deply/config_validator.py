@@ -17,6 +17,17 @@ class ConfigValidator:
         "bool",
         "custom",
     }
+    COLLECTOR_KEYS = {
+        "file_regex": {"type", "regex", "exclude_files_regex", "element_type"},
+        "class_inherits": {"type", "base_class", "exclude_files_regex"},
+        "class_name_regex": {"type", "class_name_regex", "exclude_files_regex"},
+        "function_name_regex": {"type", "function_name_regex", "exclude_files_regex"},
+        "directory": {"type", "directories", "recursive", "exclude_files_regex", "element_type"},
+        "decorator_usage": {"type", "decorator_name", "decorator_regex", "exclude_files_regex"},
+        "bool": {"type", "must", "any_of", "must_not", "exclude_files_regex"},
+        "custom": {"type", "class", "params", "exclude_files_regex"},
+    }
+    ELEMENT_TYPES = {"class", "function", "variable"}
     RULE_KEYS = {
         "disallow_layer_dependencies",
         "disallow_external_imports",
@@ -62,8 +73,11 @@ class ConfigValidator:
             return
 
         for index, path in enumerate(paths):
-            if not Path(path).exists():
+            analysis_path = Path(path)
+            if not analysis_path.exists():
                 errors.append(f"paths[{index}]: path does not exist: {path}")
+            elif not analysis_path.is_dir():
+                errors.append(f"paths[{index}]: path is not a directory: {path}")
 
     def _validate_exclude_files(self, exclude_files: Any, errors: List[str]) -> None:
         if not isinstance(exclude_files, list) or not all(isinstance(pattern, str) for pattern in exclude_files):
@@ -125,6 +139,13 @@ class ConfigValidator:
         if collector_type not in self.COLLECTOR_TYPES:
             errors.append(f"{path}.type: unknown collector type: {collector_type}")
             return
+
+        self._validate_known_keys(collector_config, path, self.COLLECTOR_KEYS[collector_type], errors)
+
+        if "element_type" in collector_config:
+            element_type = collector_config["element_type"]
+            if not isinstance(element_type, str) or element_type not in self.ELEMENT_TYPES:
+                errors.append(f"{path}.element_type: must be one of class, function, variable")
 
         if collector_type == "file_regex":
             self._validate_required_regex(collector_config, "regex", path, errors)
