@@ -1,7 +1,7 @@
 import ast
 import logging
 from pathlib import Path
-from typing import Dict, Set, Callable
+from typing import Callable, Dict, List, Optional, Set
 
 from deply.models.code_element import CodeElement
 from deply.models.dependency import Dependency
@@ -31,10 +31,11 @@ class CodeAnalyzer:
         ]
         logging.debug(f"Initialized CodeAnalyzer with {len(self.code_elements)} code elements.")
 
-    def analyze(self) -> None:
+    def analyze(self) -> List[str]:
         logging.debug("Starting analysis of code elements.")
         name_to_elements = self._build_name_to_element_map()
         logging.debug(f"Name to elements map built with {len(name_to_elements)} names.")
+        analysis_errors: List[str] = []
 
         file_to_elements: Dict[Path, Set[CodeElement]] = {}
         for code_element in self.code_elements:
@@ -42,8 +43,11 @@ class CodeAnalyzer:
 
         for file_path, elements_in_file in file_to_elements.items():
             logging.debug(f"Analyzing file: {file_path} with {len(elements_in_file)} code elements")
-            self._extract_dependencies_from_file(file_path, elements_in_file, name_to_elements)
+            analysis_error = self._extract_dependencies_from_file(file_path, elements_in_file, name_to_elements)
+            if analysis_error:
+                analysis_errors.append(analysis_error)
         logging.debug("Completed analysis of code elements.")
+        return analysis_errors
 
     def _build_name_to_element_map(self) -> Dict[str, Set[CodeElement]]:
         logging.debug("Building name to element map.")
@@ -58,7 +62,7 @@ class CodeAnalyzer:
             file_path: Path,
             code_elements_in_file: Set[CodeElement],
             name_to_elements: Dict[str, Set[CodeElement]]
-    ) -> None:
+    ) -> Optional[str]:
         logging.debug(f"Extracting dependencies from file: {file_path}")
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
@@ -67,9 +71,8 @@ class CodeAnalyzer:
             tree = ast.parse(source_code, filename=str(file_path))
             set_ast_parents(tree)
             logging.debug(f"AST parsing completed for {file_path}.")
-        except (SyntaxError, FileNotFoundError, UnicodeDecodeError) as e:
-            logging.warning(f"Failed to parse {file_path}: {e}")
-            return
+        except (OSError, SyntaxError, UnicodeError) as exception:
+            return f"failed to analyze {file_path}: {exception}"
 
         elements_in_file_by_name = {elem.name: elem for elem in code_elements_in_file}
 
@@ -82,3 +85,4 @@ class CodeAnalyzer:
         logging.debug(f"Starting AST traversal for file: {file_path}")
         visitor.visit(tree)
         logging.debug(f"Completed AST traversal for file: {file_path}")
+        return None

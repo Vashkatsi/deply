@@ -101,6 +101,17 @@ class TestExternalImportExtraction(unittest.TestCase):
 
         self.assertEqual(imports, [])
 
+    def test_extract_absolute_imports_reports_parse_error(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            file_path = Path(temporary_directory) / "invalid.py"
+            file_path.write_text("def invalid(:\n")
+            analysis_errors = []
+
+            extract_absolute_imports(file_path, analysis_errors)
+
+        self.assertEqual(len(analysis_errors), 1)
+        self.assertIn(f"failed to analyze {file_path}:", analysis_errors[0])
+
 
 class TestExternalImportRunner(unittest.TestCase):
     def test_runner_reports_external_imports_and_skips_relative_imports(self):
@@ -294,7 +305,7 @@ class TestExternalImportRunner(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(payload["total_violations"], 0)
 
-    def test_runner_ignores_files_without_collected_layer_elements(self):
+    def test_runner_fails_when_external_import_file_has_no_collected_elements(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "test_project"
             domain_path = project_path / "domain"
@@ -337,13 +348,11 @@ class TestExternalImportRunner(unittest.TestCase):
                 )
             )
 
-            with patch("sys.stdout", new=io.StringIO()) as output_stream:
+            with patch("sys.stderr", new=io.StringIO()) as error_stream:
                 result = runner.run()
 
-        payload = json.loads(output_stream.getvalue())
-
-        self.assertTrue(result)
-        self.assertEqual(payload["total_violations"], 0)
+        self.assertFalse(result)
+        self.assertIn("no code elements mapped to configured layers", error_stream.getvalue())
 
 
 if __name__ == "__main__":

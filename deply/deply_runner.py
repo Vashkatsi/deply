@@ -3,8 +3,9 @@ import concurrent.futures
 import logging
 import os
 import re
+import sys
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from deply.code_analyzer import CodeAnalyzer
 from deply.collectors.collector_factory import CollectorFactory
@@ -36,6 +37,7 @@ class DeplyRunner:
         self.mermaid_builder = MermaidDiagramBuilder()
         self.workers_count = 1
         self.ignore_maps = {}
+        self.analysis_errors: List[str] = []
 
     def _get_workers_count(self) -> int:
         if self.args.parallel is None:
@@ -97,6 +99,15 @@ class DeplyRunner:
             layer_name = layer_config["name"]
             self.layers[layer_name] = Layer(name=layer_name, code_elements=set(), dependencies=set())
 
+        def collect_file_result(file_result):
+            file_path_str, results, ignore_map, analysis_error = file_result
+            self.ignore_maps[file_path_str] = ignore_map
+            if analysis_error:
+                self.analysis_errors.append(analysis_error)
+            for layer_name, element in results:
+                self.layers[layer_name].code_elements.add(element)
+                self.code_element_to_layer[element] = layer_name
+
         if self.workers_count > 1:
             with concurrent.futures.ProcessPoolExecutor(max_workers=self.workers_count) as executor:
                 futures = [
@@ -104,18 +115,10 @@ class DeplyRunner:
                     for file_path in self.all_files
                 ]
                 for future in concurrent.futures.as_completed(futures):
-                    file_path_str, file_results, ignore_map = future.result()
-                    self.ignore_maps[file_path_str] = ignore_map
-                    for layer_name, element in file_results:
-                        self.layers[layer_name].code_elements.add(element)
-                        self.code_element_to_layer[element] = layer_name
+                    collect_file_result(future.result())
         else:
             for file_path in self.all_files:
-                file_path_str, file_results, ignore_map = process_file(file_path, self.layer_collectors)
-                self.ignore_maps[file_path_str] = ignore_map
-                for layer_name, element in file_results:
-                    self.layers[layer_name].code_elements.add(element)
-                    self.code_element_to_layer[element] = layer_name
+                collect_file_result(process_file(file_path, self.layer_collectors))
 
         for layer_name, layer in self.layers.items():
             logging.info(
@@ -167,7 +170,10 @@ class DeplyRunner:
             code_elements=set(self.code_element_to_layer.keys()),
             dependency_handler=dependency_handler
         )
-        analyzer.analyze()
+        analysis_errors = analyzer.analyze()
+        self.analysis_errors.extend(analysis_errors)
+        if analysis_errors:
+            return
         logging.info(
             f"Analysis complete. Found {self.metrics['total_dependencies']} dependencies(s)."
         )
@@ -205,7 +211,9 @@ class DeplyRunner:
 
         imports_by_file: Dict[Path, List[Tuple[str, int, int]]] = {}
         for (file_path, layer_name), element in file_layer_elements.items():
-            imports = imports_by_file.setdefault(file_path, extract_absolute_imports(file_path))
+            if file_path not in imports_by_file:
+                imports_by_file[file_path] = extract_absolute_imports(file_path, self.analysis_errors)
+            imports = imports_by_file[file_path]
             for module_name, line, column in imports:
                 for rule in external_import_rules:
                     violation_candidate = rule.check_external_import(
@@ -235,28 +243,56 @@ class DeplyRunner:
             print("\n[Mermaid Diagram of Layer Dependencies]\n")
             print(mermaid_diagram)
 
+    def is_analysis_complete(self) -> bool:
+        if not self.analysis_errors:
+            return True
+
+        print("Incomplete analysis:", file=sys.stderr)
+        for analysis_error in sorted(self.analysis_errors):
+            print(f"- {analysis_error}", file=sys.stderr)
+        return False
+
     def run(self):
         self.load_configuration()
         self.map_layer_collectors()
         self.collect_all_files()
+        if not self.all_files:
+            self.analysis_errors.append("no Python files found")
+            return self.is_analysis_complete()
+
         self.collect_code_elements()
+        if not self.code_element_to_layer:
+            self.analysis_errors.append("no code elements mapped to configured layers")
+        if not self.is_analysis_complete():
+            return False
+
         self.prepare_rules()
         self.analyze_dependencies()
+        if not self.is_analysis_complete():
+            return False
+
         self.run_element_based_checks()
         self.run_external_import_checks()
+        if not self.is_analysis_complete():
+            return False
+
         report = self.generate_report()
         self.output_report(report)
 
         return len(self.violations) <= self.args.max_violations
 
 
-def extract_absolute_imports(file_path: Path) -> List[Tuple[str, int, int]]:
+def extract_absolute_imports(
+        file_path: Path,
+        analysis_errors: Optional[List[str]] = None,
+) -> List[Tuple[str, int, int]]:
     imports: List[Tuple[str, int, int]] = []
     try:
         source_code = file_path.read_text(encoding="utf-8")
         file_ast = ast.parse(source_code, filename=str(file_path))
-    except Exception as ex:
-        logging.debug(f"Skipping external import checks for {file_path}: {ex}")
+    except (OSError, SyntaxError, UnicodeError) as exception:
+        if analysis_errors is not None:
+            analysis_errors.append(f"failed to analyze {file_path}: {exception}")
         return imports
 
     for node in ast.walk(file_ast):
@@ -272,7 +308,10 @@ def extract_absolute_imports(file_path: Path) -> List[Tuple[str, int, int]]:
     return imports
 
 
-def process_file(file_path: Path, layer_collectors: List[Tuple[str, Any]]) -> Tuple[str, List[Tuple[str, CodeElement]], IgnoreMap]:
+def process_file(
+        file_path: Path,
+        layer_collectors: List[Tuple[str, Any]],
+) -> Tuple[str, List[Tuple[str, CodeElement]], IgnoreMap, Optional[str]]:
     results: List[Tuple[str, CodeElement]] = []
     ignore_map: IgnoreMap = {"file": set(), "lines": {}}
     try:
@@ -280,15 +319,12 @@ def process_file(file_path: Path, layer_collectors: List[Tuple[str, Any]]) -> Tu
             file_content = f.read()
         file_bytes = file_content.encode("utf-8")
         file_ast = ast.parse(file_content, filename=str(file_path))
-    except Exception as ex:
-        logging.debug(f"Skipping file {file_path} due to parse error: {ex}")
-        return (str(file_path), results, ignore_map)
-
-    # Parse ignore directives from the already-read file content
-    ignore_map = parse_ignore_comments(file_path, file_bytes=file_bytes)
+        ignore_map = parse_ignore_comments(file_path, file_bytes=file_bytes)
+    except Exception as exception:
+        return str(file_path), results, ignore_map, f"failed to analyze {file_path}: {exception}"
 
     for layer_name, collector in layer_collectors:
         matched_elements = collector.match_in_file(file_ast, file_path)
         for element in matched_elements:
             results.append((layer_name, element))
-    return (str(file_path), results, ignore_map)
+    return str(file_path), results, ignore_map, None
