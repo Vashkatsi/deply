@@ -1,11 +1,10 @@
-import ast
 import logging
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Set
 
 from deply.models.code_element import CodeElement
 from deply.models.dependency import Dependency
-from deply.utils.ast_utils import set_ast_parents
+from deply.utils.ast_utils import parse_python_file, set_ast_parents
 from deply.utils.dependency_visitor import DependencyVisitor
 
 
@@ -65,10 +64,7 @@ class CodeAnalyzer:
     ) -> Optional[str]:
         logging.debug(f"Extracting dependencies from file: {file_path}")
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                source_code = f.read()
-            logging.debug(f"File {file_path} read successfully.")
-            tree = ast.parse(source_code, filename=str(file_path))
+            tree, _ = parse_python_file(file_path)
             set_ast_parents(tree)
             logging.debug(f"AST parsing completed for {file_path}.")
         except (OSError, SyntaxError, UnicodeError) as exception:

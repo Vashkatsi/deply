@@ -1,4 +1,5 @@
 import argparse
+import codecs
 import io
 import json
 import tempfile
@@ -112,8 +113,52 @@ class TestExternalImportExtraction(unittest.TestCase):
         self.assertEqual(len(analysis_errors), 1)
         self.assertIn(f"failed to analyze {file_path}:", analysis_errors[0])
 
+    def test_extract_absolute_imports_accepts_python_source_encodings(self):
+        source_files = {
+            "pep263": "# coding: latin-1\nimport requests\nname = 'café'\n".encode("latin-1"),
+            "utf8_bom": codecs.BOM_UTF8 + b"import requests\n",
+        }
+        for source_name, source_bytes in source_files.items():
+            with self.subTest(source=source_name), tempfile.TemporaryDirectory() as temporary_directory:
+                file_path = Path(temporary_directory) / "service.py"
+                file_path.write_bytes(source_bytes)
+                analysis_errors = []
+
+                imports = extract_absolute_imports(file_path, analysis_errors)
+
+            self.assertEqual(imports, [("requests", 2 if source_name == "pep263" else 1, 0)])
+            self.assertEqual(analysis_errors, [])
+
 
 class TestExternalImportRunner(unittest.TestCase):
+    def test_runner_records_external_import_read_failure(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            missing_file = Path(temporary_directory) / "missing.py"
+            element = CodeElement(
+                file=missing_file,
+                name="load_user",
+                element_type="function",
+                line=1,
+                column=0,
+            )
+            runner = DeplyRunner(
+                argparse.Namespace(
+                    config="deply.yaml",
+                    parallel=None,
+                    report_format="text",
+                    output=None,
+                    mermaid=False,
+                    max_violations=0,
+                )
+            )
+            runner.code_element_to_layer = {element: "domain"}
+            runner.rules = [ExternalImportRule("domain", ["requests"])]
+
+            runner.run_external_import_checks()
+
+        self.assertEqual(len(runner.analysis_errors), 1)
+        self.assertIn(f"failed to analyze {missing_file}:", runner.analysis_errors[0])
+
     def test_runner_reports_external_imports_and_skips_relative_imports(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "test_project"

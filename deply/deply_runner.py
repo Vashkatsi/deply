@@ -16,6 +16,7 @@ from deply.models.layer import Layer
 from deply.models.violation import Violation
 from deply.reports.report_generator import ReportGenerator
 from deply.rules import RuleFactory
+from deply.utils.ast_utils import parse_python_file
 from deply.utils.ignore_parser import parse_ignore_comments, ALL_SUPPRESSION_RULES, IgnoreMap
 
 
@@ -288,8 +289,7 @@ def extract_absolute_imports(
 ) -> List[Tuple[str, int, int]]:
     imports: List[Tuple[str, int, int]] = []
     try:
-        source_code = file_path.read_text(encoding="utf-8")
-        file_ast = ast.parse(source_code, filename=str(file_path))
+        file_ast, _ = parse_python_file(file_path)
     except (OSError, SyntaxError, UnicodeError) as exception:
         if analysis_errors is not None:
             analysis_errors.append(f"failed to analyze {file_path}: {exception}")
@@ -315,10 +315,7 @@ def process_file(
     results: List[Tuple[str, CodeElement]] = []
     ignore_map: IgnoreMap = {"file": set(), "lines": {}}
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            file_content = f.read()
-        file_bytes = file_content.encode("utf-8")
-        file_ast = ast.parse(file_content, filename=str(file_path))
+        file_ast, file_bytes = parse_python_file(file_path)
         ignore_map = parse_ignore_comments(file_path, file_bytes=file_bytes)
     except Exception as exception:
         return str(file_path), results, ignore_map, f"failed to analyze {file_path}: {exception}"
