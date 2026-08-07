@@ -101,7 +101,11 @@ Run `deply validate` to check configuration syntax and schema without analyzing 
 deply validate --config=deply.yaml
 ```
 
-The command checks YAML parsing, supported top-level keys, path existence, regex validity, layer names, collector settings, rule settings, and references between rules and layers. It exits with status `0` when the configuration is valid and `1` when validation errors are found.
+The command checks YAML parsing, supported top-level and collector keys, analysis
+directories, `element_type` values, regex validity, layer names, collector
+settings, rule settings, and references between rules and layers. It exits with
+status `0` when the configuration is valid and `1` when validation errors are
+found. `deply analyze` runs the same validation before scanning project files.
 
 ## Advanced Configuration Examples
 

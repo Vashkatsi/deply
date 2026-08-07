@@ -18,6 +18,9 @@ The main command for analyzing your project:
 deply analyze
 ```
 
+Analysis validates the configuration first and exits with status `1` without
+scanning project files when validation fails.
+
 ### Validate Command
 
 Validate your configuration without analyzing project files:

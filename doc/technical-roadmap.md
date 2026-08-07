@@ -13,12 +13,11 @@ assessment reflects the codebase on 2026-08-07.
 
 ### P0: eliminate incorrect green results
 
-1. **Harden validation, then require it for every analysis.** `deply analyze`
-   currently parses configuration without running `ConfigValidator`. A missing
-   configured path is skipped and analysis can exit successfully with zero
-   violations. The current validator must also reject file-valued analysis paths,
-   unknown collector fields, and invalid `element_type` values. Analysis must fail
-   before collecting files when the hardened validation fails.
+1. **Harden validation, then require it for every analysis — resolved.**
+   `ConfigValidator` rejects missing or file-valued analysis paths, unknown
+   collector fields, and invalid `element_type` values. `deply analyze` runs the
+   same validation before creating the runner and exits with status `1` when the
+   configuration is invalid.
 
 2. **Support async and nested scopes correctly — resolved.** `DependencyVisitor`
    now routes `FunctionDef` and `AsyncFunctionDef` through shared handling and
@@ -134,12 +133,12 @@ async function dependency: missed
 aliased import dependency: missed
 two equal target names: dependencies emitted to both targets
 call after nested function: missed
-invalid path: `deply validate` exit 1; `deply analyze` exit 0 with 0 violations
+invalid path before validation preflight: `deply validate` exit 1; `deply analyze` exit 0 with 0 violations
 ```
 
 Relevant implementation points:
 
-- `deply/main.py`: validation is a separate command and is not called by analysis.
+- `deply/main.py`: explicit validation and analysis use the same validation preflight.
 - `deply/deply_runner.py`: missing paths and parse failures are skipped; layer
   ownership is stored as one string; only collection uses the process pool.
 - `deply/code_analyzer.py`: files are read and parsed again and the global index is
@@ -153,8 +152,8 @@ Relevant implementation points:
 
 Each item should be a separate change with focused regression tests:
 
-1. Harden configuration validation.
-2. Require validation before analysis.
+1. ~~Harden configuration validation.~~ Resolved.
+2. ~~Require validation before analysis.~~ Resolved.
 3. Fail on incomplete analysis.
 4. ~~Fix async and nested-scope correctness.~~ Resolved.
 5. Define layer ownership and overlap semantics.
