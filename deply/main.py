@@ -10,7 +10,7 @@ from deply.config_validator import ConfigValidator
 from deply.deply_runner import DeplyRunner
 
 
-def validate_configuration(config_path: str) -> bool:
+def validate_configuration(config_path: str, report_success: bool = True) -> bool:
     configuration_path = Path(config_path)
     try:
         config = ConfigParser(configuration_path).parse()
@@ -19,7 +19,8 @@ def validate_configuration(config_path: str) -> bool:
         errors = [str(exception)]
 
     if not errors:
-        print(f"Configuration is valid: {configuration_path}")
+        if report_success:
+            print(f"Configuration is valid: {configuration_path}")
         return True
 
     print("Invalid deply configuration:", file=sys.stderr)
@@ -90,6 +91,9 @@ def main():
 
     if args.command == "validate":
         sys.exit(0 if validate_configuration(args.config) else 1)
+
+    if not validate_configuration(args.config, report_success=False):
+        sys.exit(1)
 
     logging.getLogger(__name__).info("Starting Deply analysis...")  # pragma: no mutate
     runner = DeplyRunner(args)

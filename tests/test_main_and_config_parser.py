@@ -23,7 +23,9 @@ class TestMainAndConfigParser(unittest.TestCase):
         self.assertIn(f"deply {__version__}", output_stream.getvalue())
 
     def test_main_uses_analyze_as_default_command(self):
-        with patch.object(sys, "argv", ["main.py"]), patch("deply.main.DeplyRunner") as runner_class:
+        with patch.object(sys, "argv", ["main.py"]), patch(
+            "deply.main.validate_configuration", return_value=True
+        ), patch("deply.main.DeplyRunner") as runner_class:
             runner_class.return_value.run.return_value = True
 
             with self.assertRaises(SystemExit) as exit_context:
@@ -35,6 +37,8 @@ class TestMainAndConfigParser(unittest.TestCase):
 
     def test_main_sets_debug_log_level_when_verbose_is_two_or_more(self):
         with patch.object(sys, "argv", ["main.py", "-vv", "analyze"]), patch(
+            "deply.main.validate_configuration", return_value=True
+        ), patch(
             "deply.main.DeplyRunner"
         ) as runner_class, patch("deply.main.logging.basicConfig") as basic_config_function:
             runner_class.return_value.run.return_value = True
@@ -46,6 +50,8 @@ class TestMainAndConfigParser(unittest.TestCase):
 
     def test_main_sets_info_log_level_by_default(self):
         with patch.object(sys, "argv", ["main.py", "analyze"]), patch(
+            "deply.main.validate_configuration", return_value=True
+        ), patch(
             "deply.main.DeplyRunner"
         ) as runner_class, patch("deply.main.logging.basicConfig") as basic_config_function:
             runner_class.return_value.run.return_value = True
@@ -181,6 +187,88 @@ class TestMainAndConfigParser(unittest.TestCase):
 
         self.assertEqual(exit_context.exception.code, 1)
         self.assertEqual(error_stream.getvalue().splitlines()[0], "Invalid deply configuration:")
+
+    def test_main_analyze_exits_one_before_creating_runner_for_invalid_configuration(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            configuration_path = Path(temporary_directory) / "deply.yaml"
+            configuration_path.write_text(
+                yaml.dump(
+                    {
+                        "deply": {
+                            "paths": ["/path/that/does/not/exist"],
+                            "exclude_files": [],
+                            "layers": [
+                                {
+                                    "name": "domain",
+                                    "collectors": [
+                                        {
+                                            "type": "file_regex",
+                                            "regex": ".*",
+                                            "element_type": [],
+                                        }
+                                    ],
+                                }
+                            ],
+                            "ruleset": {},
+                        }
+                    }
+                )
+            )
+
+            with patch.object(sys, "argv", ["main.py", "analyze", "--config", str(configuration_path)]), patch(
+                "deply.main.DeplyRunner"
+            ) as runner_class, patch("sys.stderr", new=StringIO()) as error_stream:
+                with self.assertRaises(SystemExit) as exit_context:
+                    main()
+
+        self.assertEqual(exit_context.exception.code, 1)
+        runner_class.assert_not_called()
+        self.assertEqual(error_stream.getvalue().splitlines()[0], "Invalid deply configuration:")
+        self.assertIn("paths[0]: path does not exist: /path/that/does/not/exist", error_stream.getvalue())
+        self.assertIn(
+            "layers[0].collectors[0].element_type: must be one of class, function, variable",
+            error_stream.getvalue(),
+        )
+
+    def test_main_analyze_validates_without_printing_validation_success(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "project"
+            project_path.mkdir()
+            configuration_path = Path(temporary_directory) / "deply.yaml"
+            configuration_path.write_text(
+                yaml.dump(
+                    {
+                        "deply": {
+                            "paths": [str(project_path)],
+                            "exclude_files": [],
+                            "layers": [
+                                {
+                                    "name": "domain",
+                                    "collectors": [
+                                        {
+                                            "type": "file_regex",
+                                            "regex": ".*",
+                                        }
+                                    ],
+                                }
+                            ],
+                            "ruleset": {},
+                        }
+                    }
+                )
+            )
+
+            with patch.object(sys, "argv", ["main.py", "analyze", "--config", str(configuration_path)]), patch(
+                "deply.main.DeplyRunner"
+            ) as runner_class, patch("sys.stdout", new=StringIO()) as output_stream:
+                runner_class.return_value.run.return_value = True
+
+                with self.assertRaises(SystemExit) as exit_context:
+                    main()
+
+        self.assertEqual(exit_context.exception.code, 0)
+        runner_class.assert_called_once()
+        self.assertNotIn("Configuration is valid:", output_stream.getvalue())
 
     def test_validate_configuration_passes_config_path_to_validator(self):
         with patch("deply.main.ConfigParser") as parser_class, patch(

@@ -94,6 +94,9 @@ deply analyze --mermaid
 deply --help
 ```
 
+`deply analyze` validates the configuration before scanning project files and
+exits with status `1` when the configuration is invalid.
+
 ## Agent Skill
 
 Deply v1.0.0 includes a portable Agent Skill at `skills/deply-config/` for Codex, Claude Code, and other Agent Skills-compatible assistants. It helps an assistant inspect a Python project, generate `deply.yaml` with `light`, `medium`, or `strict` architecture rules, validate it with `deply validate`, run analysis, and add Makefile/CI/docs integration.
@@ -115,7 +118,7 @@ See [Agent Skill](https://vashkatsi.github.io/deply/doc/skills.html) for install
 - **Extensible and Configurable**: Customize layers and rules for any Python project setup.
 - **Mermaid Diagrams**: Visualize your architecture and dependencies with Mermaid diagrams.
 - **Error Suppression**: Suppress specific rule violations with inline comments.
-- **Config Validation**: Validate `deply.yaml` without running project analysis.
+- **Config Validation**: Validate `deply.yaml` explicitly or automatically before analysis.
 - **Architecture Recipes**: Start from validated configurations for 21 architecture and application patterns.
 
 ## Error Suppression
