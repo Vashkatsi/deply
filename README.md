@@ -190,6 +190,7 @@ evidence, and implementation conditions.
 - [Agent Skill](https://vashkatsi.github.io/deply/doc/skills.html) - Install and use the Deply Config Agent Skill
 - [Architecture Styles](https://vashkatsi.github.io/deply/doc/architectures.html) - Compare 21 architecture and application pattern recipes
 - [FastAPI](https://vashkatsi.github.io/deply/doc/fastapi.html) - Configure layered FastAPI boundaries
+- [Full Stack FastAPI Template](https://vashkatsi.github.io/deply/doc/full-stack-fastapi-template.html) - Verified baseline for FastAPI's official template
 - [Django](https://vashkatsi.github.io/deply/doc/django.html) - Configure Django model, view, and domain boundaries
 - [Flask](https://vashkatsi.github.io/deply/doc/flask.html) - Configure Flask route, blueprint, and persistence boundaries
 

@@ -3,6 +3,7 @@ layout: default
 title: FastAPI
 parent: Configuration
 nav_order: 1
+has_children: true
 ---
 
 # FastAPI Configuration Recipe
@@ -10,6 +11,11 @@ nav_order: 1
 This recipe is a starting point for a layered FastAPI project. It is regular
 Deply configuration, not a built-in preset. Adapt the source directories and
 rules to the architecture the project actually uses.
+
+## Verified Template Recipe
+
+For the official template, use the zero-violation
+[Full Stack FastAPI Template recipe](full-stack-fastapi-template.html).
 
 The example assumes this structure:
 

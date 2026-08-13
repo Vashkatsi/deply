@@ -26,6 +26,7 @@ Welcome to the Deply documentation! This documentation will help you understand 
    - Configuration File Structure
    - Layer Definitions
    - Rules and Collectors
+   - [Full Stack FastAPI Template]({{ site.baseurl }}/doc/full-stack-fastapi-template.html)
    - [Architecture Styles]({{ site.baseurl }}/doc/architectures.html)
    - Examples
 

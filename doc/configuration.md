@@ -80,6 +80,7 @@ Collectors define how code elements are collected into layers. See the [Collecto
 Use these editable starting points for common Python web frameworks:
 
 - [FastAPI](fastapi.html)
+- [Full Stack FastAPI Template](full-stack-fastapi-template.html)
 - [Django](django.html)
 - [Flask](flask.html)
 

@@ -4,3 +4,5 @@
 - Normalize accepted `git diff --no-index` exit `1` explicitly before chaining checks.
 - Fail closed when no elements map; update empty-analysis report expectations.
 - Remove obsolete imports after moving parsing into a shared helper.
+- Deply relative paths resolve from analysis working directory; place extracted configs at target root for end-to-end validation.
+- Quote Jekyll braces in `rg` patterns.
