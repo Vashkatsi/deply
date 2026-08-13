@@ -175,5 +175,10 @@ ruleset:
       - starlette
 ```
 
+At that end state, application and domain code depend only on ports. SQLModel
+repositories and infrastructure adapters implement those ports and depend
+inward; application code no longer imports concrete persistence adapters, and
+the current data/infrastructure dependency cycle is removed.
+
 For a stronger end state, use the [Clean Architecture](architectures/clean.html)
 or [Hexagonal](architectures/hexagonal.html) recipes as the boundary model.
