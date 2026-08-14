@@ -37,15 +37,14 @@ assessment reflects the codebase on 2026-08-07.
    the reliable core; call and attribute inference must be reported as heuristic
    when exact resolution is impossible.
 
-4. **Define one explicit layer-ownership contract.** An element collected into
-   multiple layers is stored in every `Layer`, while dependency checks use only the
-   last matching layer. This makes element rules and dependency rules disagree.
-   The bundled DDD recipe already uses overlap as two axes: bounded context and
-   domain role. Therefore neither exclusive ownership nor `Set[str]` is a safe
-   mechanical fix. Decide whether to preserve that model with explicit membership
-   pair evaluation and violation deduplication, or separate exclusive layers from
-   orthogonal tags and migrate the recipe. Document ordering only if last-match
-   precedence remains part of the public contract.
+4. **Define one explicit layer-ownership contract — resolved.** An element belongs
+   to every layer whose collector matches it. Dependency checks evaluate every
+   unique source and target membership pair except equal layer names, and external
+   import checks apply to every membership. Collector and layer order has no
+   precedence. Raw dependency metrics still count each code dependency once, while
+   multiple explicitly forbidden membership pairs may produce multiple violations.
+   The bundled DDD recipe uses context and domain memberships as separate axes
+   without duplicate cross-context rules.
 
 5. **Fail on incomplete analysis — resolved.** Collection and dependency-analysis
    read or parse failures are reported and make analysis fail. Analysis also fails
@@ -113,7 +112,7 @@ assessment reflects the codebase on 2026-08-07.
 
 | # | Recommendation | Verdict | Priority | Reason |
 |---|---|---|---|---|
-| 1 | Map an element to `Set[str]` | Inconsistency valid; proposed fix incomplete | P0 | Last-match dependency ownership conflicts with multi-membership element checks. Existing DDD recipes use overlap, so define pair evaluation or separate layers from tags first. |
+| 1 | Map an element to `Set[str]` | Resolved with explicit pair evaluation | P0 | Every matching membership is preserved and each unique source-target pair is checked independently of collector order. |
 | 2 | Violation baseline | Valid and worth doing | P1 | Enables incremental adoption more safely than `--max-violations`; depends on stable violation identity. |
 | 3 | Layer cycle detection | Valid as an opt-in rule | P1 | Useful after graph correctness; not every architecture forbids every cycle. |
 | 4 | Parallel dependency analysis | Performance concern valid; action unproven | P2 | Files are parsed at least twice, and more with external-import checks; profiling must justify the redesign. |
@@ -139,7 +138,8 @@ Relevant implementation points:
 
 - `deply/main.py`: explicit validation and analysis use the same validation preflight.
 - `deply/deply_runner.py`: incomplete collection fails analysis; layer ownership
-  is stored as one string; only collection uses the process pool.
+  preserves every matching layer and evaluates membership pairs; only collection
+  uses the process pool.
 - `deply/code_analyzer.py`: files are read and parsed again, failures are returned
   to the runner, and the global index is keyed by element name.
 - `deply/utils/dependency_visitor.py`: async and sync functions share recursive
@@ -155,7 +155,7 @@ Each item should be a separate change with focused regression tests:
 2. ~~Require validation before analysis.~~ Resolved.
 3. ~~Fail on incomplete analysis.~~ Resolved.
 4. ~~Fix async and nested-scope correctness.~~ Resolved.
-5. Define layer ownership and overlap semantics.
+5. ~~Define layer ownership and overlap semantics.~~ Resolved.
 6. Build the module-aware, scope-aware resolver.
 7. Add completeness metrics and stable violation fingerprints.
 8. Add baseline support.

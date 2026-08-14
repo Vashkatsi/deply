@@ -233,9 +233,9 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             line=3,
             column=4,
         )
-        self.runner.code_element_to_layer = {
-            source_element: "views",
-            target_element: "models",
+        self.runner.code_element_to_layers = {
+            source_element: {"views"},
+            target_element: {"models"},
         }
         self.runner.rules = [DependencyRule("views", ["models"])]
 
@@ -253,6 +253,53 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
         violation = next(iter(self.runner.violations))
         self.assertEqual(violation.dependency, dependency)
         add_edge.assert_called_once_with("views", "models", True)
+
+    def test_analyze_dependencies_checks_every_layer_membership_pair(self):
+        source_element = CodeElement(
+            file=Path("source.py"),
+            name="source",
+            element_type="function",
+            line=1,
+            column=0,
+        )
+        target_element = CodeElement(
+            file=Path("target.py"),
+            name="Target",
+            element_type="class",
+            line=1,
+            column=0,
+        )
+        dependency = Dependency(
+            code_element=source_element,
+            depends_on_code_element=target_element,
+            dependency_type="function_call",
+            line=3,
+            column=4,
+        )
+        self.runner.code_element_to_layers = {
+            source_element: {"application", "feature"},
+            target_element: {"domain", "feature"},
+        }
+        self.runner.rules = [DependencyRule("application", ["domain"])]
+
+        def run_analyzer():
+            analyzer_class.call_args.kwargs["dependency_handler"](dependency)
+            return []
+
+        with patch("deply.deply_runner.CodeAnalyzer") as analyzer_class:
+            analyzer_class.return_value.analyze.side_effect = run_analyzer
+            self.runner.analyze_dependencies()
+
+        self.assertEqual(self.runner.metrics["total_dependencies"], 1)
+        self.assertEqual(len(self.runner.violations), 1)
+        self.assertEqual(
+            self.runner.mermaid_builder.edges_with_violation,
+            {
+                ("application", "domain"): True,
+                ("application", "feature"): False,
+                ("feature", "domain"): False,
+            },
+        )
 
     def test_collect_code_elements_parallel_branch(self):
         self.runner.layers_config = [{"name": "services_layer"}]
@@ -290,8 +337,43 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             self.runner.collect_code_elements()
 
         self.assertIn(collected_element, self.runner.layers["services_layer"].code_elements)
-        self.assertEqual(self.runner.code_element_to_layer[collected_element], "services_layer")
+        self.assertEqual(self.runner.code_element_to_layers[collected_element], {"services_layer"})
         self.assertIn("service.py", self.runner.ignore_maps)
+
+    def test_collect_code_elements_preserves_overlapping_layer_memberships(self):
+        collected_element = CodeElement(
+            file=Path("service.py"),
+            name="Service",
+            element_type="class",
+            line=1,
+            column=0,
+        )
+
+        for collected_layers in (("context", "domain"), ("domain", "context")):
+            with self.subTest(collected_layers=collected_layers):
+                self.runner = DeplyRunner(self.args)
+                self.runner.layers_config = [
+                    {"name": "context"},
+                    {"name": "domain"},
+                ]
+                self.runner.layer_collectors = []
+                self.runner.all_files = [Path("service.py")]
+
+                with patch(
+                    "deply.deply_runner.process_file",
+                    return_value=(
+                        "service.py",
+                        [(layer_name, collected_element) for layer_name in collected_layers],
+                        {"file": set(), "lines": {}},
+                        None,
+                    ),
+                ):
+                    self.runner.collect_code_elements()
+
+                self.assertEqual(
+                    self.runner.code_element_to_layers[collected_element],
+                    {"context", "domain"},
+                )
 
     def test_process_file_reports_syntax_error(self):
         with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as temporary_file:

@@ -151,13 +151,54 @@ class TestExternalImportRunner(unittest.TestCase):
                     max_violations=0,
                 )
             )
-            runner.code_element_to_layer = {element: "domain"}
+            runner.code_element_to_layers = {element: {"domain"}}
             runner.rules = [ExternalImportRule("domain", ["requests"])]
 
             runner.run_external_import_checks()
 
         self.assertEqual(len(runner.analysis_errors), 1)
         self.assertIn(f"failed to analyze {missing_file}:", runner.analysis_errors[0])
+
+    def test_runner_checks_external_imports_for_every_layer_membership(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            file_path = Path(temporary_directory) / "service.py"
+            file_path.write_text("import requests\n")
+            element = CodeElement(
+                file=file_path,
+                name="load_user",
+                element_type="function",
+                line=2,
+                column=0,
+            )
+            runner = DeplyRunner(
+                argparse.Namespace(
+                    config="deply.yaml",
+                    parallel=None,
+                    report_format="text",
+                    output=None,
+                    mermaid=False,
+                    max_violations=0,
+                )
+            )
+            runner.code_element_to_layers = {
+                element: {"application", "domain"},
+            }
+            runner.rules = [
+                ExternalImportRule("application", ["requests"]),
+                ExternalImportRule("domain", ["requests"]),
+            ]
+
+            with patch(
+                "deply.deply_runner.extract_absolute_imports",
+                wraps=extract_absolute_imports,
+            ) as extract_imports:
+                runner.run_external_import_checks()
+
+        self.assertEqual(extract_imports.call_count, 1)
+        self.assertEqual(
+            {violation.message.split("'")[1] for violation in runner.violations},
+            {"application", "domain"},
+        )
 
     def test_runner_reports_external_imports_and_skips_relative_imports(self):
         with tempfile.TemporaryDirectory() as temporary_directory:

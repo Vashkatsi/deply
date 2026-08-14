@@ -83,6 +83,34 @@ class TestReports(unittest.TestCase):
         unknown_report = ReportGenerator(violations).generate("unknown-format")
         self.assertIn("Violations report", unknown_report)
 
+    def test_report_generator_stabilizes_same_location_violation_order(self):
+        violations = [
+            self._build_violation(
+                "app.py",
+                10,
+                0,
+                "Layer 'domain' is not allowed to depend on layer 'payments'.",
+                ViolationType.DISALLOWED_DEPENDENCY,
+            ),
+            self._build_violation(
+                "app.py",
+                10,
+                0,
+                "Layer 'application' is not allowed to depend on layer 'payments'.",
+                ViolationType.DISALLOWED_DEPENDENCY,
+            ),
+        ]
+
+        payload = json.loads(ReportGenerator(violations).generate("json"))
+
+        self.assertEqual(
+            [violation["message"] for violation in payload["violations"]],
+            [
+                "Layer 'application' is not allowed to depend on layer 'payments'.",
+                "Layer 'domain' is not allowed to depend on layer 'payments'.",
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

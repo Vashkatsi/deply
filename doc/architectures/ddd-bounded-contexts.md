@@ -50,23 +50,23 @@ deply:
           directories: ["src/app/shared_kernel"]
   ruleset:
     ordering:
-      disallow_layer_dependencies: [payments, payments_domain]
+      disallow_layer_dependencies: [payments]
     payments:
-      disallow_layer_dependencies: [ordering, ordering_domain]
+      disallow_layer_dependencies: [ordering]
     ordering_domain:
-      disallow_layer_dependencies: [payments, payments_domain]
       disallow_external_imports: [django, fastapi, flask, sqlalchemy, requests]
     payments_domain:
-      disallow_layer_dependencies: [ordering, ordering_domain]
       disallow_external_imports: [django, fastapi, flask, sqlalchemy, requests]
     shared_kernel:
-      disallow_layer_dependencies: [ordering, payments, ordering_domain, payments_domain]
+      disallow_layer_dependencies: [ordering, payments]
 ```
 
-Overlapping collectors should be ordered carefully because one element can
-match both a context and its domain layer. Prefer the more specific domain
-layers for rules that isolate business logic. Create a shared kernel only for
-stable concepts genuinely shared by both contexts.
+An element under `ordering/domain` belongs to both `ordering` and
+`ordering_domain`; the same applies to payments. Deply checks every membership
+pair regardless of layer order. Context rules prevent cross-context
+dependencies, while domain rules isolate business logic from external packages.
+Create a shared kernel only for stable concepts genuinely shared by both
+contexts.
 
 Deply cannot verify ubiquitous language, aggregate invariants, context maps, or
 the organizational ownership implied by a bounded context.

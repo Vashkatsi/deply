@@ -37,6 +37,13 @@ deply:
 
 Layers are the core concept in Deply. They represent different parts of your application architecture. Each layer can have multiple collectors that define which code elements belong to that layer.
 
+A code element belongs to every layer whose collector matches it. Layer and
+collector order has no precedence. For each code dependency, Deply checks every
+unique source and target layer pair, except pairs where both layer names are the
+same. One code dependency can therefore produce multiple violations when
+multiple membership pairs are explicitly forbidden. External-import rules also
+apply to every matching layer.
+
 ### Example Layer Configuration
 
 ```yaml
