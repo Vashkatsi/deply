@@ -75,6 +75,10 @@ deply:
         - requests
 ```
 
+Code elements may belong to multiple layers. Deply checks every unique source
+and target layer pair, so layer and collector order does not change dependency
+or external-import results.
+
 ### Command-Line Usage
 
 ```bash

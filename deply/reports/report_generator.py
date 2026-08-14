@@ -8,7 +8,16 @@ from .formats.text_report import TextReport
 
 class ReportGenerator:
     def __init__(self, violations: List[Violation]):
-        self.violations = violations
+        self.violations = sorted(
+            violations,
+            key=lambda violation: (
+                violation.violation_type.code,
+                str(violation.file),
+                violation.line,
+                violation.column,
+                violation.message,
+            ),
+        )
 
     def generate(self, format: str) -> str:
         reporter: Union[TextReport, JsonReport, GitHubActionsReport]

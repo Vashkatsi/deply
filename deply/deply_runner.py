@@ -31,7 +31,7 @@ class DeplyRunner:
         self.layer_collectors = []
         self.all_files = []
         self.layers: Dict[str, Layer] = {}
-        self.code_element_to_layer: Dict[CodeElement, str] = {}
+        self.code_element_to_layers: Dict[CodeElement, Set[str]] = {}
         self.rules = []
         self.violations: Set[Violation] = set()
         self.metrics = {'total_dependencies': 0}
@@ -107,7 +107,7 @@ class DeplyRunner:
                 self.analysis_errors.append(analysis_error)
             for layer_name, element in results:
                 self.layers[layer_name].code_elements.add(element)
-                self.code_element_to_layer[element] = layer_name
+                self.code_element_to_layers.setdefault(element, set()).add(layer_name)
 
         if self.workers_count > 1:
             with concurrent.futures.ProcessPoolExecutor(max_workers=self.workers_count) as executor:
@@ -151,24 +151,26 @@ class DeplyRunner:
         def dependency_handler(dependency):
             source = dependency.code_element
             target = dependency.depends_on_code_element
-            source_layer = self.code_element_to_layer.get(source)
-            target_layer = self.code_element_to_layer.get(target)
+            source_layers = self.code_element_to_layers.get(source)
+            target_layers = self.code_element_to_layers.get(target)
             self.metrics['total_dependencies'] += 1
-            if not source_layer or not target_layer:
+            if not source_layers or not target_layers:
                 return
-            if source_layer == target_layer:
-                return
-            has_violation = False
-            for rule in self.rules:
-                violation = rule.check(source_layer, target_layer, dependency)
-                if violation and not self.is_violation_suppressed(violation):
-                    self.violations.add(violation)
-                    has_violation = True
-            self.mermaid_builder.add_edge(source_layer, target_layer, has_violation)
+            for source_layer in sorted(source_layers):
+                for target_layer in sorted(target_layers):
+                    if source_layer == target_layer:
+                        continue
+                    has_violation = False
+                    for rule in self.rules:
+                        violation = rule.check(source_layer, target_layer, dependency)
+                        if violation and not self.is_violation_suppressed(violation):
+                            self.violations.add(violation)
+                            has_violation = True
+                    self.mermaid_builder.add_edge(source_layer, target_layer, has_violation)
 
         logging.info("Analyzing code and checking dependencies ...")
         analyzer = CodeAnalyzer(
-            code_elements=set(self.code_element_to_layer.keys()),
+            code_elements=set(self.code_element_to_layers.keys()),
             dependency_handler=dependency_handler
         )
         analysis_errors = analyzer.analyze()
@@ -196,19 +198,20 @@ class DeplyRunner:
             return
 
         file_layer_elements: Dict[Tuple[Path, str], CodeElement] = {}
-        for element, layer_name in self.code_element_to_layer.items():
-            key = (element.file, layer_name)
-            current_element = file_layer_elements.get(key)
-            if current_element is None or (
-                    element.line,
-                    element.column,
-                    element.name,
-            ) < (
-                    current_element.line,
-                    current_element.column,
-                    current_element.name,
-            ):
-                file_layer_elements[key] = element
+        for element, layer_names in self.code_element_to_layers.items():
+            for layer_name in layer_names:
+                key = (element.file, layer_name)
+                current_element = file_layer_elements.get(key)
+                if current_element is None or (
+                        element.line,
+                        element.column,
+                        element.name,
+                ) < (
+                        current_element.line,
+                        current_element.column,
+                        current_element.name,
+                ):
+                    file_layer_elements[key] = element
 
         imports_by_file: Dict[Path, List[Tuple[str, int, int]]] = {}
         for (file_path, layer_name), element in file_layer_elements.items():
@@ -262,7 +265,7 @@ class DeplyRunner:
             return self.is_analysis_complete()
 
         self.collect_code_elements()
-        if not self.code_element_to_layer:
+        if not self.code_element_to_layers:
             self.analysis_errors.append("no code elements mapped to configured layers")
         if not self.is_analysis_complete():
             return False
