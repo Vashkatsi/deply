@@ -221,7 +221,8 @@ class DirectoryCollector(BaseCollector):
         """Build a dotted name for class/function definitions, e.g. 'MyClass.inner_func'."""
         names = []
         current: Optional[ast.AST] = node
-        while isinstance(current, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
-            names.append(current.name)
+        while current is not None:
+            if isinstance(current, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                names.append(current.name)
             current = getattr(current, 'parent', None)
         return '.'.join(reversed(names)) if names else ''

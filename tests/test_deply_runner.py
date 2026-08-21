@@ -233,10 +233,9 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             line=3,
             column=4,
         )
-        self.runner.code_element_to_layers = {
-            source_element: {"views"},
-            target_element: {"models"},
-        }
+        legacy_layer_map = self.runner.code_element_to_layer
+        legacy_layer_map[source_element] = "views"
+        legacy_layer_map.update({target_element: "models"})
         self.runner.rules = [DependencyRule("views", ["models"])]
 
         def run_analyzer():
@@ -338,6 +337,7 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
 
         self.assertIn(collected_element, self.runner.layers["services_layer"].code_elements)
         self.assertEqual(self.runner.code_element_to_layers[collected_element], {"services_layer"})
+        self.assertEqual(self.runner.code_element_to_layer[collected_element], "services_layer")
         self.assertIn("service.py", self.runner.ignore_maps)
 
     def test_collect_code_elements_preserves_overlapping_layer_memberships(self):
@@ -374,6 +374,68 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
                     self.runner.code_element_to_layers[collected_element],
                     {"context", "domain"},
                 )
+
+    def test_reassigned_legacy_layer_map_is_authoritative(self):
+        collected_element = CodeElement(
+            file=Path("service.py"),
+            name="Service",
+            element_type="class",
+            line=1,
+            column=0,
+        )
+        self.runner.code_element_to_layers = {
+            collected_element: {"context", "domain"}
+        }
+        self.runner.code_element_to_layer[collected_element] = "domain"
+        self.runner._synced_code_element_to_layer = {
+            collected_element: "domain"
+        }
+
+        self.runner.code_element_to_layer = dict(
+            self.runner.code_element_to_layer
+        )
+        self.runner._sync_legacy_layer_map()
+
+        self.assertEqual(
+            self.runner.code_element_to_layers[collected_element],
+            {"domain"},
+        )
+
+    def test_run_syncs_mutated_legacy_layer_map_before_completeness(self):
+        collected_element = CodeElement(
+            file=Path("service.py"),
+            name="Service",
+            element_type="class",
+            line=1,
+            column=0,
+        )
+        self.runner.code_element_to_layer[collected_element] = "domain"
+        self.runner.all_files = [collected_element.file]
+
+        with patch.object(self.runner, "load_configuration"), patch.object(
+            self.runner,
+            "map_layer_collectors",
+        ), patch.object(self.runner, "collect_all_files"), patch.object(
+            self.runner,
+            "collect_code_elements",
+        ), patch.object(self.runner, "prepare_rules"), patch.object(
+            self.runner,
+            "analyze_dependencies",
+        ), patch.object(self.runner, "run_element_based_checks"), patch.object(
+            self.runner,
+            "run_external_import_checks",
+        ), patch.object(
+            self.runner,
+            "generate_report",
+            return_value="",
+        ), patch.object(self.runner, "output_report"):
+            succeeded = self.runner.run()
+
+        self.assertTrue(succeeded)
+        self.assertEqual(
+            self.runner.code_element_to_layers[collected_element],
+            {"domain"},
+        )
 
     def test_process_file_reports_syntax_error(self):
         with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as temporary_file:

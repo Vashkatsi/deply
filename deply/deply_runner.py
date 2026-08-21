@@ -16,7 +16,7 @@ from deply.models.layer import Layer
 from deply.models.violation import Violation
 from deply.reports.report_generator import ReportGenerator
 from deply.rules import RuleFactory
-from deply.utils.ast_utils import parse_python_file
+from deply.utils.ast_utils import parse_python_file, set_ast_parents
 from deply.utils.ignore_parser import parse_ignore_comments, ALL_SUPPRESSION_RULES, IgnoreMap
 
 
@@ -31,7 +31,9 @@ class DeplyRunner:
         self.layer_collectors = []
         self.all_files = []
         self.layers: Dict[str, Layer] = {}
+        self._code_element_to_layer: Dict[CodeElement, str] = {}
         self.code_element_to_layers: Dict[CodeElement, Set[str]] = {}
+        self._synced_code_element_to_layer: Dict[CodeElement, str] = {}
         self.rules = []
         self.violations: Set[Violation] = set()
         self.metrics = {'total_dependencies': 0}
@@ -39,6 +41,36 @@ class DeplyRunner:
         self.workers_count = 1
         self.ignore_maps = {}
         self.analysis_errors: List[str] = []
+
+    @property
+    def code_element_to_layer(self) -> Dict[CodeElement, str]:
+        return self._code_element_to_layer
+
+    @code_element_to_layer.setter
+    def code_element_to_layer(
+            self,
+            layer_map: Dict[CodeElement, str],
+    ) -> None:
+        self._code_element_to_layer = layer_map
+        if not hasattr(self, "code_element_to_layers"):
+            return
+        for element in set(self.code_element_to_layers) - set(layer_map):
+            self.code_element_to_layers.pop(element)
+        for element, layer_name in layer_map.items():
+            self.code_element_to_layers[element] = {layer_name}
+        self._synced_code_element_to_layer = dict(layer_map)
+
+    def _sync_legacy_layer_map(self) -> None:
+        removed_elements = (
+            self._synced_code_element_to_layer.keys()
+            - self.code_element_to_layer.keys()
+        )
+        for element in removed_elements:
+            self.code_element_to_layers.pop(element, None)
+        for element, layer_name in self.code_element_to_layer.items():
+            if self._synced_code_element_to_layer.get(element) != layer_name:
+                self.code_element_to_layers[element] = {layer_name}
+        self._synced_code_element_to_layer = dict(self.code_element_to_layer)
 
     def _get_workers_count(self) -> int:
         if self.args.parallel is None:
@@ -108,6 +140,8 @@ class DeplyRunner:
             for layer_name, element in results:
                 self.layers[layer_name].code_elements.add(element)
                 self.code_element_to_layers.setdefault(element, set()).add(layer_name)
+                self.code_element_to_layer[element] = layer_name
+                self._synced_code_element_to_layer[element] = layer_name
 
         if self.workers_count > 1:
             with concurrent.futures.ProcessPoolExecutor(max_workers=self.workers_count) as executor:
@@ -148,6 +182,8 @@ class DeplyRunner:
         return False
 
     def analyze_dependencies(self):
+        self._sync_legacy_layer_map()
+
         def dependency_handler(dependency):
             source = dependency.code_element
             target = dependency.depends_on_code_element
@@ -171,7 +207,8 @@ class DeplyRunner:
         logging.info("Analyzing code and checking dependencies ...")
         analyzer = CodeAnalyzer(
             code_elements=set(self.code_element_to_layers.keys()),
-            dependency_handler=dependency_handler
+            dependency_handler=dependency_handler,
+            analysis_paths=self.paths,
         )
         analysis_errors = analyzer.analyze()
         self.analysis_errors.extend(analysis_errors)
@@ -191,6 +228,7 @@ class DeplyRunner:
                         self.violations.add(violation_candidate)
 
     def run_external_import_checks(self):
+        self._sync_legacy_layer_map()
         external_import_rules = [
             rule for rule in self.rules if getattr(rule, "checks_external_imports", False)
         ]
@@ -265,6 +303,7 @@ class DeplyRunner:
             return self.is_analysis_complete()
 
         self.collect_code_elements()
+        self._sync_legacy_layer_map()
         if not self.code_element_to_layers:
             self.analysis_errors.append("no code elements mapped to configured layers")
         if not self.is_analysis_complete():
@@ -319,6 +358,7 @@ def process_file(
     ignore_map: IgnoreMap = {"file": set(), "lines": {}}
     try:
         file_ast, file_bytes = parse_python_file(file_path)
+        set_ast_parents(file_ast)
         ignore_map = parse_ignore_comments(file_path, file_bytes=file_bytes)
     except Exception as exception:
         return str(file_path), results, ignore_map, f"failed to analyze {file_path}: {exception}"

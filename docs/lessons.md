@@ -6,3 +6,29 @@
 - Remove obsolete imports after moving parsing into a shared helper.
 - Deply relative paths resolve from analysis working directory; place extracted configs at target root for end-to-end validation.
 - Quote Jekyll braces in `rg` patterns.
+- Use valid import paths in dependency-resolution fixtures.
+- Avoid widening typed AST tuples in place.
+- Use exact unittest class names from test modules.
+- Copy restored branch state before mutating it.
+- Include test method names in expectation patches.
+- Run behavior tests on the oldest supported Python.
+- Ensure compatibility fixtures reach dependency analysis.
+- Keep mutation-tested loops provably finite.
+- Narrow optional values before bounded loops.
+- Build and install both distributions before release.
+- Do not re-annotate branch-local variables.
+- Run archived tests outside the checkout.
+- Run multiprocessing suites from a script.
+- Preserve visitor behavior without binding maps.
+- Use fail-fast scripts and managed Twine.
+- External rebinding clears internal aliases.
+- Prefix supported shell commands with rtk.
+- Quote optional shell globs.
+- Narrow AST variants before subtype fields.
+- Avoid generators in mutation-covered traversal.
+- Run PyPA build outside generated build dirs.
+- Verify build tooling outside checkout.
+- Run CI branch coverage before release.
+- Annotate empty flow-state stacks.
+- Cover new flow branches before CI.
+- Use covariant sequences for heterogeneous AST children.
