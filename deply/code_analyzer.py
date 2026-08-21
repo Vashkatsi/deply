@@ -173,7 +173,7 @@ class CodeAnalyzer:
             relative_import = f"{'.' * node.level}{imported_module}"
             try:
                 imported_module = resolve_name(relative_import, package_name)
-            except ImportError as exception:
+            except (ImportError, ValueError) as exception:
                 analysis_errors.append(
                     f"failed to resolve relative import '{relative_import}' "
                     f"in {file_path}:{node.lineno}: {exception}"

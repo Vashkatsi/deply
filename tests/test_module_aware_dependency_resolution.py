@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 import yaml
 
@@ -603,6 +604,40 @@ class TestModuleAwareDependencyResolution(unittest.TestCase):
             ruleset={"caller": {"disallow_layer_dependencies": ["target"]}},
             return_errors=True,
         )
+
+        self.assertFalse(succeeded)
+        self.assertEqual(violations, [])
+        self.assertTrue(
+            any("failed to resolve relative import '.service'" in error
+                for error in analysis_errors)
+        )
+
+    def test_relative_import_value_error_fails_analysis(self):
+        try:
+            with patch(
+                    "deply.code_analyzer.resolve_name",
+                    side_effect=ValueError("no package specified"),
+            ):
+                succeeded, violations, analysis_errors = self._run_deply(
+                    files={
+                        "service.py": "def target():\n    pass\n",
+                        "caller.py": (
+                            "from .service import target\n\n"
+                            "def caller():\n"
+                            "    target()\n"
+                        ),
+                    },
+                    layers=[
+                        self._function_layer("target", r"service\.py$"),
+                        self._function_layer("caller", r"caller\.py$"),
+                    ],
+                    ruleset={
+                        "caller": {"disallow_layer_dependencies": ["target"]}
+                    },
+                    return_errors=True,
+                )
+        except ValueError as exception:
+            self.fail(f"ValueError escaped dependency analysis: {exception}")
 
         self.assertFalse(succeeded)
         self.assertEqual(violations, [])
