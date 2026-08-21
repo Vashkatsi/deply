@@ -13,3 +13,5 @@
 - Include test method names in expectation patches.
 - Run behavior tests on the oldest supported Python.
 - Ensure compatibility fixtures reach dependency analysis.
+- Keep mutation-tested loops provably finite.
+- Narrow optional values before bounded loops.
