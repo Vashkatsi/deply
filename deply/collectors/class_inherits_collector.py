@@ -70,7 +70,8 @@ class ClassInheritsCollector(BaseCollector):
     def _get_full_name(self, node):
         names = []
         current = node
-        while isinstance(current, (ast.ClassDef, ast.FunctionDef)):
-            names.append(current.name)
+        while current is not None:
+            if isinstance(current, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                names.append(current.name)
             current = getattr(current, "parent", None)
         return ".".join(reversed(names))

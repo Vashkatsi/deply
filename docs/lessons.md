@@ -16,3 +16,19 @@
 - Keep mutation-tested loops provably finite.
 - Narrow optional values before bounded loops.
 - Build and install both distributions before release.
+- Do not re-annotate branch-local variables.
+- Run archived tests outside the checkout.
+- Run multiprocessing suites from a script.
+- Preserve visitor behavior without binding maps.
+- Use fail-fast scripts and managed Twine.
+- External rebinding clears internal aliases.
+- Prefix supported shell commands with rtk.
+- Quote optional shell globs.
+- Narrow AST variants before subtype fields.
+- Avoid generators in mutation-covered traversal.
+- Run PyPA build outside generated build dirs.
+- Verify build tooling outside checkout.
+- Run CI branch coverage before release.
+- Annotate empty flow-state stacks.
+- Cover new flow branches before CI.
+- Use covariant sequences for heterogeneous AST children.

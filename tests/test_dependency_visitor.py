@@ -367,6 +367,50 @@ class TestDependencyVisitor(unittest.TestCase):
             },
         )
 
+    def test_try_handler_closure_uses_handler_binding_state(self):
+        syntax_tree = ast.parse(
+            "def outer():\n"
+            "    try:\n"
+            "        import package_a.service as service\n"
+            "        1 / 0\n"
+            "        import package_b.service as service\n"
+            "    except Exception:\n"
+            "        def caller():\n"
+            "            service.target()\n"
+            "        return caller\n"
+        )
+        set_ast_parents(syntax_tree)
+        caller_element = CodeElement(
+            file=Path("sample.py"),
+            name="outer.caller",
+            element_type="function",
+            line=7,
+            column=8,
+        )
+        target_a_element = self._build_code_element("target_a")
+        target_b_element = self._build_code_element("target_b")
+        captured_dependencies = []
+        visitor = DependencyVisitor(
+            code_elements_in_file={"outer.caller": caller_element},
+            dependency_types=["function_call"],
+            dependency_handler=captured_dependencies.append,
+            name_to_elements={},
+            local_import_bindings={
+                (3, 8): {"service.target": {target_a_element}},
+                (5, 8): {"service.target": {target_b_element}},
+            },
+        )
+
+        visitor.visit(syntax_tree)
+
+        self.assertEqual(
+            {
+                dependency.depends_on_code_element.name
+                for dependency in captured_dependencies
+            },
+            {"target_a"},
+        )
+
     def test_get_full_name_handles_subscript_constant_index_and_fallback(self):
         visitor = DependencyVisitor(
             code_elements_in_file={},
@@ -398,6 +442,103 @@ class TestDependencyVisitor(unittest.TestCase):
         if hasattr(ast, "Index"):
             legacy_index_node = ast.Index(value=ast.Name(id="LegacyType", ctx=ast.Load()))
             self.assertEqual(visitor._get_full_name(legacy_index_node), "LegacyType")
+
+    def test_reachability_helpers_stop_at_function_boundary(self):
+        syntax_tree = ast.parse(
+            "def outer():\n"
+            "    raise RuntimeError\n"
+            "    break\n"
+            "def nested_loop():\n"
+            "    for _ in []:\n"
+            "        if True:\n"
+            "            break\n"
+            "def invalid_break():\n"
+            "    def caller():\n"
+            "        pass\n"
+            "    break\n"
+        )
+        set_ast_parents(syntax_tree)
+        function_node = syntax_tree.body[0]
+        raise_node = function_node.body[0]
+        break_node = function_node.body[1]
+        nested_function_node = syntax_tree.body[1]
+        loop_node = nested_function_node.body[0]
+        nested_break_node = loop_node.body[0].body[0]
+        invalid_break_function_node = syntax_tree.body[2]
+        caller_node = invalid_break_function_node.body[0]
+        visitor = DependencyVisitor(
+            code_elements_in_file={},
+            dependency_types=[],
+            dependency_handler=lambda _dependency: None,
+            name_to_elements={},
+        )
+
+        self.assertFalse(
+            visitor._has_reachable_later_binding(
+                function_node,
+                function_node,
+                "service",
+            )
+        )
+        self.assertFalse(
+            visitor._has_reachable_later_binding(
+                function_node,
+                ast.Pass(),
+                "service",
+            )
+        )
+        self.assertFalse(
+            visitor._enclosing_finally_binds_name(
+                raise_node,
+                function_node,
+                "service",
+            )
+        )
+        self.assertIsNone(visitor._find_catching_try(raise_node, function_node))
+        self.assertIsNone(visitor._find_enclosing_loop(break_node, function_node))
+        self.assertIs(
+            visitor._find_enclosing_loop(
+                nested_break_node,
+                nested_function_node,
+            ),
+            loop_node,
+        )
+        self.assertFalse(
+            visitor._has_reachable_later_binding(
+                invalid_break_function_node,
+                caller_node,
+                "service",
+            )
+        )
+
+    def test_delete_scope_binding_clears_import_and_class_name(self):
+        target_element = self._build_code_element("target")
+        for scope_type, expected_bound_names in (
+            ("function", {"service"}),
+            ("class", set()),
+        ):
+            with self.subTest(scope_type=scope_type):
+                visitor = DependencyVisitor(
+                    code_elements_in_file={},
+                    dependency_types=[],
+                    dependency_handler=lambda _dependency: None,
+                    name_to_elements={},
+                )
+                visitor.scope_import_bindings = [
+                    {"service.target": {target_element}}
+                ]
+                visitor.scope_bound_names = [{"service"}]
+                visitor.scope_types = [scope_type]
+
+                visitor._delete_scope_bindings(
+                    ast.Name(id="service", ctx=ast.Del())
+                )
+
+                self.assertEqual(visitor.scope_import_bindings, [{}])
+                self.assertEqual(
+                    visitor.scope_bound_names,
+                    [expected_bound_names],
+                )
 
 
 if __name__ == "__main__":
