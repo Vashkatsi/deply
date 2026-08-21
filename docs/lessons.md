@@ -6,3 +6,8 @@
 - Remove obsolete imports after moving parsing into a shared helper.
 - Deply relative paths resolve from analysis working directory; place extracted configs at target root for end-to-end validation.
 - Quote Jekyll braces in `rg` patterns.
+- Use valid import paths in dependency-resolution fixtures.
+- Avoid widening typed AST tuples in place.
+- Use exact unittest class names from test modules.
+- Copy restored branch state before mutating it.
+- Include test method names in expectation patches.

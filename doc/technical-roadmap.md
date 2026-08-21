@@ -25,17 +25,15 @@ assessment reflects the codebase on 2026-08-07.
    async dependencies use their own element, while uncollected nested scopes remain
    unattributed instead of leaking into their parent.
 
-3. **Replace global name matching with module-aware resolution.** The dependency
-   index is keyed by unqualified element name. Import aliases are missed and equal
-   names in different modules resolve to every matching element. Build stable
-   identities from module path and qualified symbol name, then resolve absolute
-   imports, relative imports, and aliases against those identities. Track lexical
-   scopes, local imports, assignments, and shadowing so an import or name load is
-   attributed only to its real source. Represent modules as analysis nodes or define
-   explicit propagation from module-level imports to collected elements; lexical
-   scope tracking alone cannot supply that ownership. Import edges should remain
-   the reliable core; call and attribute inference must be reported as heuristic
-   when exact resolution is impossible.
+3. **Replace global name matching with module-aware resolution — resolved.** The
+   dependency index now uses module paths and qualified symbol names. Absolute and
+   relative imports, aliases, module attributes, local imports, and lexical
+   shadowing resolve against those identities. Matching analysis roots take
+   precedence; ambiguous cross-root identities fail analysis instead of producing
+   guessed edges. Module-level imports explicitly propagate to collected elements,
+   preserving import ownership without adding module elements to the public model.
+   Runtime instance types, dynamic imports, star imports, and re-export graphs remain
+   outside exact static resolution and are not inferred.
 
 4. **Define one explicit layer-ownership contract — resolved.** An element belongs
    to every layer whose collector matches it. Dependency checks evaluate every
@@ -141,9 +139,10 @@ Relevant implementation points:
   preserves every matching layer and evaluates membership pairs; only collection
   uses the process pool.
 - `deply/code_analyzer.py`: files are read and parsed again, failures are returned
-  to the runner, and the global index is keyed by element name.
+  to the runner, and internal imports resolve through module-qualified identities.
 - `deply/utils/dependency_visitor.py`: async and sync functions share recursive
-  scope handling; functions and classes restore their enclosing element.
+  scope handling; local bindings and imports respect function, class, lambda, and
+  comprehension scopes.
 - `deply/reports/formats/json_report.py`: reports expose violations only, without
   analysis completeness metrics.
 
@@ -156,7 +155,7 @@ Each item should be a separate change with focused regression tests:
 3. ~~Fail on incomplete analysis.~~ Resolved.
 4. ~~Fix async and nested-scope correctness.~~ Resolved.
 5. ~~Define layer ownership and overlap semantics.~~ Resolved.
-6. Build the module-aware, scope-aware resolver.
+6. ~~Build the module-aware, scope-aware resolver.~~ Resolved.
 7. Add completeness metrics and stable violation fingerprints.
 8. Add baseline support.
 9. Add the opt-in cycle rule.

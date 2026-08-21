@@ -79,6 +79,11 @@ Code elements may belong to multiple layers. Deply checks every unique source
 and target layer pair, so layer and collector order does not change dependency
 or external-import results.
 
+Internal absolute imports, relative imports, and aliases are resolved against
+module-qualified symbols. Calls and attributes reached through those imports are
+exact while runtime instance types, dynamic imports, star imports, and re-export
+graphs are not inferred.
+
 ### Command-Line Usage
 
 ```bash
