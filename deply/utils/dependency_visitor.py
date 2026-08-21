@@ -466,7 +466,9 @@ class DependencyVisitor(ast.NodeVisitor):
             name: Optional[str],
             name_to_elements: Dict[str, Set[CodeElement]],
     ) -> Set[CodeElement]:
-        while name:
+        if not name:
+            return set()
+        for _ in range(name.count(".") + 1):
             elements = name_to_elements.get(name)
             if elements:
                 return elements
