@@ -20,6 +20,7 @@ pretty = true
 [tool.mutmut]
 source_paths = [
     "deply/main.py",
+    "deply/code_analyzer.py",
     "deply/config_validator.py",
     "deply/deply_runner.py",
     "deply/utils/dependency_visitor.py",

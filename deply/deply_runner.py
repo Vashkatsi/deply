@@ -16,7 +16,7 @@ from deply.models.layer import Layer
 from deply.models.violation import Violation
 from deply.reports.report_generator import ReportGenerator
 from deply.rules import RuleFactory
-from deply.utils.ast_utils import parse_python_file
+from deply.utils.ast_utils import parse_python_file, set_ast_parents
 from deply.utils.ignore_parser import parse_ignore_comments, ALL_SUPPRESSION_RULES, IgnoreMap
 
 
@@ -171,7 +171,8 @@ class DeplyRunner:
         logging.info("Analyzing code and checking dependencies ...")
         analyzer = CodeAnalyzer(
             code_elements=set(self.code_element_to_layers.keys()),
-            dependency_handler=dependency_handler
+            dependency_handler=dependency_handler,
+            analysis_paths=self.paths,
         )
         analysis_errors = analyzer.analyze()
         self.analysis_errors.extend(analysis_errors)
@@ -319,6 +320,7 @@ def process_file(
     ignore_map: IgnoreMap = {"file": set(), "lines": {}}
     try:
         file_ast, file_bytes = parse_python_file(file_path)
+        set_ast_parents(file_ast)
         ignore_map = parse_ignore_comments(file_path, file_bytes=file_bytes)
     except Exception as exception:
         return str(file_path), results, ignore_map, f"failed to analyze {file_path}: {exception}"
