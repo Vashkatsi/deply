@@ -1,6 +1,6 @@
 include README.md
 include LICENSE
 include requirements.txt
-include config_example.yaml
+include deply.yaml.example
 recursive-include deply/rules *.py
 recursive-include skills *

@@ -15,3 +15,4 @@
 - Ensure compatibility fixtures reach dependency analysis.
 - Keep mutation-tested loops provably finite.
 - Narrow optional values before bounded loops.
+- Build and install both distributions before release.

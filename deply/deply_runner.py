@@ -40,6 +40,21 @@ class DeplyRunner:
         self.ignore_maps = {}
         self.analysis_errors: List[str] = []
 
+    @property
+    def code_element_to_layer(self) -> Dict[CodeElement, str]:
+        return {
+            element: min(layer_names)
+            for element, layer_names in self.code_element_to_layers.items()
+            if layer_names
+        }
+
+    @code_element_to_layer.setter
+    def code_element_to_layer(self, layer_by_element: Dict[CodeElement, str]) -> None:
+        self.code_element_to_layers = {
+            element: {layer_name}
+            for element, layer_name in layer_by_element.items()
+        }
+
     def _get_workers_count(self) -> int:
         if self.args.parallel is None:
             return 1

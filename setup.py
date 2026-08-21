@@ -1,12 +1,19 @@
-from deply import __version__
+import re
+from pathlib import Path
+
 from setuptools import setup, find_packages
 
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+long_description = Path("README.md").read_text(encoding="utf-8")
+version_match = re.search(
+    r"__version__ = '([^']+)'",
+    Path("deply/__init__.py").read_text(encoding="utf-8"),
+)
+if version_match is None:
+    raise RuntimeError("Unable to read package version")
 
 setup(
     name="deply",
-    version=__version__,
+    version=version_match.group(1),
     author="Archil Abuladze",
     author_email="armiworker@gmail.com",
     description="A tool to enforce architectural patterns in python projects",

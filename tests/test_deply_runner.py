@@ -233,9 +233,9 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             line=3,
             column=4,
         )
-        self.runner.code_element_to_layers = {
-            source_element: {"views"},
-            target_element: {"models"},
+        self.runner.code_element_to_layer = {
+            source_element: "views",
+            target_element: "models",
         }
         self.runner.rules = [DependencyRule("views", ["models"])]
 
@@ -338,6 +338,7 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
 
         self.assertIn(collected_element, self.runner.layers["services_layer"].code_elements)
         self.assertEqual(self.runner.code_element_to_layers[collected_element], {"services_layer"})
+        self.assertEqual(self.runner.code_element_to_layer[collected_element], "services_layer")
         self.assertIn("service.py", self.runner.ignore_maps)
 
     def test_collect_code_elements_preserves_overlapping_layer_memberships(self):
