@@ -11,3 +11,5 @@
 - Use exact unittest class names from test modules.
 - Copy restored branch state before mutating it.
 - Include test method names in expectation patches.
+- Run behavior tests on the oldest supported Python.
+- Ensure compatibility fixtures reach dependency analysis.
