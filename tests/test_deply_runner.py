@@ -210,6 +210,38 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             self.runner.collect_all_files()
 
         self.assertEqual(set(self.runner.all_files), {keep_file_path})
+        self.assertEqual(
+            self.runner.metrics,
+            {
+                "files_discovered": 2,
+                "files_excluded": 1,
+                "files_included": 1,
+                "files_parsed": 0,
+                "files_parse_failed": 0,
+                "files_mapped": 0,
+                "files_unmapped": 0,
+                "elements_mapped": 0,
+                "elements_overlapping": 0,
+                "dependencies_detected": 0,
+            },
+        )
+
+    def test_collect_all_files_deduplicates_overlapping_paths_and_keeps_included_file(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            base_path = Path(temporary_directory)
+            nested_path = base_path / "nested"
+            nested_path.mkdir()
+            file_path = nested_path / "service.py"
+            file_path.write_text("class Service:\n    pass\n")
+            self.runner.paths = [base_path, nested_path]
+            self.runner.exclude_files = [re.compile(r"^nested/service\.py$")]
+
+            self.runner.collect_all_files()
+
+        self.assertEqual(self.runner.all_files, [file_path])
+        self.assertEqual(self.runner.metrics["files_discovered"], 1)
+        self.assertEqual(self.runner.metrics["files_included"], 1)
+        self.assertEqual(self.runner.metrics["files_excluded"], 0)
 
     def test_analyze_dependencies_updates_metrics_violations_and_mermaid_edges(self):
         source_element = CodeElement(
@@ -248,7 +280,7 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             with patch.object(self.runner.mermaid_builder, "add_edge") as add_edge:
                 self.runner.analyze_dependencies()
 
-        self.assertEqual(self.runner.metrics["total_dependencies"], 1)
+        self.assertEqual(self.runner.metrics["dependencies_detected"], 1)
         self.assertEqual(len(self.runner.violations), 1)
         violation = next(iter(self.runner.violations))
         self.assertEqual(violation.dependency, dependency)
@@ -290,7 +322,7 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             analyzer_class.return_value.analyze.side_effect = run_analyzer
             self.runner.analyze_dependencies()
 
-        self.assertEqual(self.runner.metrics["total_dependencies"], 1)
+        self.assertEqual(self.runner.metrics["dependencies_detected"], 1)
         self.assertEqual(len(self.runner.violations), 1)
         self.assertEqual(
             self.runner.mermaid_builder.edges_with_violation,
@@ -339,6 +371,9 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
         self.assertIn(collected_element, self.runner.layers["services_layer"].code_elements)
         self.assertEqual(self.runner.code_element_to_layers[collected_element], {"services_layer"})
         self.assertIn("service.py", self.runner.ignore_maps)
+        self.assertEqual(self.runner.metrics["files_parsed"], 1)
+        self.assertEqual(self.runner.metrics["files_mapped"], 1)
+        self.assertEqual(self.runner.metrics["elements_mapped"], 1)
 
     def test_collect_code_elements_preserves_overlapping_layer_memberships(self):
         collected_element = CodeElement(
@@ -374,6 +409,8 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
                     self.runner.code_element_to_layers[collected_element],
                     {"context", "domain"},
                 )
+                self.assertEqual(self.runner.metrics["elements_mapped"], 1)
+                self.assertEqual(self.runner.metrics["elements_overlapping"], 1)
 
     def test_process_file_reports_syntax_error(self):
         with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as temporary_file:
@@ -434,10 +471,12 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
         )
 
     def test_run_fails_on_parse_error_in_sequential_and_parallel_modes(self):
+        metrics_by_mode = []
         for parallel in (None, 2):
             with self.subTest(parallel=parallel), tempfile.TemporaryDirectory() as temporary_directory:
                 project_path = Path(temporary_directory) / "project"
                 project_path.mkdir()
+                (project_path / "service.py").write_text("class Service:\n    pass\n")
                 invalid_file_path = project_path / "invalid.py"
                 invalid_file_path.write_text("def invalid(:\n")
                 self.runner = DeplyRunner(
@@ -460,6 +499,24 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             self.assertFalse(result)
             self.assertEqual(self.runner.workers_count, 1 if parallel is None else 2)
             self.assertIn(f"failed to analyze {invalid_file_path}:", error_stream.getvalue())
+            metrics_by_mode.append(self.runner.metrics)
+
+        self.assertEqual(metrics_by_mode[0], metrics_by_mode[1])
+        self.assertEqual(
+            metrics_by_mode[0],
+            {
+                "files_discovered": 2,
+                "files_excluded": 0,
+                "files_included": 2,
+                "files_parsed": 1,
+                "files_parse_failed": 1,
+                "files_mapped": 1,
+                "files_unmapped": 0,
+                "elements_mapped": 1,
+                "elements_overlapping": 0,
+                "dependencies_detected": 0,
+            },
+        )
 
     def test_run_accepts_python_source_encodings_in_sequential_and_parallel_modes(self):
         source_files = {
