@@ -21,7 +21,9 @@ deply analyze
 Analysis validates the configuration first and exits with status `1` without
 scanning project files when validation fails. It also exits with status `1`
 when files cannot be read or parsed, no Python files are found, or no code
-elements map to configured layers.
+elements map to configured layers. Completed reports include analysis
+completeness metrics. Incomplete analysis writes the available metrics to
+standard error and does not generate a report.
 
 ### Validate Command
 
@@ -102,10 +104,15 @@ deply analyze --parallel
 
 ### Text Format
 
-The default output format shows violations in a human-readable text format:
+The default output format shows violations and a separate completeness section:
 
 ```plaintext
-/path/to/your_project/your_project/app1/views_api.py:74 - Layer 'views' is not allowed to depend on layer 'models'
+/path/to/your_project/your_project/app1/views_api.py:74:4 - Layer 'views' is not allowed to depend on layer 'models'. Dependency type: function_call.
+
+Analysis completeness
+files_discovered: 12
+files_excluded: 2
+files_included: 10
 ```
 
 ### JSON Format
@@ -114,15 +121,41 @@ The JSON format provides structured data that can be easily parsed by other tool
 
 ```json
 {
+  "total_violations": 1,
+  "by_type": {
+    "disallowed_dependency": 1
+  },
   "violations": [
     {
       "file": "/path/to/your_project/your_project/app1/views_api.py",
+      "element_name": "list_users",
+      "element_type": "function",
       "line": 74,
-      "message": "Layer 'views' is not allowed to depend on layer 'models'"
+      "column": 4,
+      "message": "Layer 'views' is not allowed to depend on layer 'models'. Dependency type: function_call.",
+      "violation_type": "disallowed_dependency"
     }
-  ]
+  ],
+  "metrics": {
+    "files_discovered": 12,
+    "files_excluded": 2,
+    "files_included": 10,
+    "files_parsed": 10,
+    "files_parse_failed": 0,
+    "files_mapped": 8,
+    "files_unmapped": 2,
+    "elements_mapped": 31,
+    "elements_overlapping": 3,
+    "dependencies_detected": 47
+  }
 }
 ```
+
+File metrics count unique Python paths. `files_parsed` means the collection
+pass parsed the file successfully. `files_mapped` and `files_unmapped`
+partition parsed files. `dependencies_detected` counts raw dependency events
+before layer-pair expansion, suppression, and violation checks. GitHub Actions
+reports expose the same metrics as comment lines without changing annotations.
 
 For more information about:
 - Mermaid diagrams, see the [Mermaid Diagrams](mermaid.html) documentation

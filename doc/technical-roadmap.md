@@ -48,12 +48,18 @@ assessment reflects the codebase on 2026-08-07.
 
 5. **Fail on incomplete analysis — resolved.** Collection and dependency-analysis
    read or parse failures are reported and make analysis fail. Analysis also fails
-   when no Python files are found or no elements map to configured layers. Detailed
-   completeness metrics remain a separate delivery item.
+   when no Python files are found or no elements map to configured layers.
+
+6. **Report measurable analysis completeness — resolved.** Reports expose unique
+   discovered, excluded, included, parsed, mapped, and unmapped files; mapped and
+   overlapping elements; and raw detected dependencies. Incomplete analysis emits
+   the available metrics with its errors. These counters reuse existing analysis
+   passes. Unresolved references and stable violation fingerprints remain pending
+   because they require stable module and symbol identities.
 
 ### P1: improve adoption after correctness
 
-6. **Add an exact violation baseline.** `--max-violations` permits a new violation
+7. **Add an exact violation baseline.** `--max-violations` permits a new violation
    when another one disappears, while inline ignores modify source. A generated
    baseline should fingerprint rule ID, normalized relative path, stable source and
    target identities, and architecture context. Location belongs in the stored
@@ -62,7 +68,7 @@ assessment reflects the codebase on 2026-08-07.
    ones. Implement this after violation identities and dependency resolution are
    stable to avoid baseline churn.
 
-7. **Add opt-in cycle detection.** Strongly connected components after projecting
+8. **Add opt-in cycle detection.** Strongly connected components after projecting
    resolved dependencies onto the layer graph are useful, but a cycle is not
    universally forbidden. Expose a rule rather than an unconditional check and
    report the shortest actionable cycle. Implement it after module-aware resolution;
@@ -70,14 +76,14 @@ assessment reflects the codebase on 2026-08-07.
 
 ### P2: improve integrations
 
-8. **Add SARIF 2.1.0 output.** This is useful for GitHub Code Scanning and can be
+9. **Add SARIF 2.1.0 output.** This is useful for GitHub Code Scanning and can be
    implemented without a new dependency. Include stable rule IDs, source locations,
    messages, and help links. Emit a fixed `warning` level, matching current GitHub
    Actions output, until severity becomes an explicit violation property. Keep the
    existing annotations for lightweight CI. Do not describe SARIF as a universal
    GitLab format without a separately verified GitLab integration.
 
-9. **Optimize only after measuring.** Files are parsed at least twice: during
+10. **Optimize only after measuring.** Files are parsed at least twice: during
    collection and again by `CodeAnalyzer`. External-import checks add a third pass,
    and eager `setdefault` evaluation can repeat it for overlapping file-layer pairs.
    `--parallel` covers only collection. This is real duplicate work, but independently
@@ -87,7 +93,7 @@ assessment reflects the codebase on 2026-08-07.
 
 ### Immediate documentation maintenance
 
-10. **Keep public claims verifiable.** Align package, skill, and documentation
+11. **Keep public claims verifiable.** Align package, skill, and documentation
     versions; use a live downloads badge or remove the static claim; distinguish
     exact import checks from heuristic symbol inference; describe recipes as
     editable examples rather than built-in presets. These are confirmed factual
@@ -95,14 +101,14 @@ assessment reflects the codebase on 2026-08-07.
 
 ### P3: defer until demand is demonstrated
 
-11. **Prefer scriptable presets over an interactive `deply init` wizard.** The 21
+12. **Prefer scriptable presets over an interactive `deply init` wizard.** The 21
     architecture recipes are documentation, not versioned built-in presets, and do
     not currently define `light`, `medium`, or `strict` variants. If setup friction
     is demonstrated, first add a small non-interactive command such as
     `deply init --preset fastapi` with validated packaged templates and safe
     overwrite behavior. Add a wizard only if users still need one.
 
-12. **Defer custom rule plugins.** Custom collectors already load user Python code,
+13. **Defer custom rule plugins.** Custom collectors already load user Python code,
     but rule interfaces may change with layer ownership and dependency resolution.
     Stabilize those contracts first. If real users need plugins afterward, mirror
     the existing `BaseCollector` pattern with a validated `BaseRule` subclass rather
@@ -144,7 +150,7 @@ Relevant implementation points:
   to the runner, and the global index is keyed by element name.
 - `deply/utils/dependency_visitor.py`: async and sync functions share recursive
   scope handling; functions and classes restore their enclosing element.
-- `deply/reports/formats/json_report.py`: reports expose violations only, without
+- `deply/reports/formats/json_report.py`: reports expose violations and additive
   analysis completeness metrics.
 
 ## Delivery sequence
@@ -157,8 +163,9 @@ Each item should be a separate change with focused regression tests:
 4. ~~Fix async and nested-scope correctness.~~ Resolved.
 5. ~~Define layer ownership and overlap semantics.~~ Resolved.
 6. Build the module-aware, scope-aware resolver.
-7. Add completeness metrics and stable violation fingerprints.
-8. Add baseline support.
-9. Add the opt-in cycle rule.
-10. Add SARIF output.
-11. Optimize only with before/after benchmarks.
+7. ~~Add completeness metrics.~~ Resolved independently of the resolver.
+8. Add stable violation fingerprints after stable module identities.
+9. Add baseline support.
+10. Add the opt-in cycle rule.
+11. Add SARIF output.
+12. Optimize only with before/after benchmarks.

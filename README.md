@@ -103,6 +103,11 @@ exits with status `1` when the configuration is invalid or analysis is
 incomplete because files cannot be read or parsed, no Python files are found,
 or no code elements map to configured layers.
 
+Every completed analysis report includes completeness metrics for discovered,
+excluded, parsed, mapped, and unmapped files; mapped and overlapping elements;
+and detected dependencies. Incomplete analysis prints the available metrics to
+standard error before exiting.
+
 ## Agent Skill
 
 Deply v1.0.0 includes a portable Agent Skill at `skills/deply-config/` for Codex, Claude Code, and other Agent Skills-compatible assistants. It helps an assistant inspect a Python project, generate `deply.yaml` with `light`, `medium`, or `strict` architecture rules, validate it with `deply validate`, run analysis, and add Makefile/CI/docs integration.
