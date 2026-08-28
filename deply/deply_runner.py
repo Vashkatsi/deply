@@ -34,7 +34,18 @@ class DeplyRunner:
         self.code_element_to_layers: Dict[CodeElement, Set[str]] = {}
         self.rules = []
         self.violations: Set[Violation] = set()
-        self.metrics = {'total_dependencies': 0}
+        self.metrics = {
+            "files_discovered": 0,
+            "files_excluded": 0,
+            "files_included": 0,
+            "files_parsed": 0,
+            "files_parse_failed": 0,
+            "files_mapped": 0,
+            "files_unmapped": 0,
+            "elements_mapped": 0,
+            "elements_overlapping": 0,
+            "dependencies_detected": 0,
+        }
         self.mermaid_builder = MermaidDiagramBuilder()
         self.workers_count = 1
         self.ignore_maps = {}
@@ -76,10 +87,13 @@ class DeplyRunner:
 
     def collect_all_files(self):
         logging.info("Collecting all files...")
+        discovered_files: Set[Path] = set()
+        included_files: Dict[Path, Path] = {}
         for base_path in self.paths:
             if not base_path.exists():
                 continue
             all_python_files = [f for f in base_path.rglob("*.py") if f.is_file()]
+            discovered_files.update(file_path.resolve() for file_path in all_python_files)
 
             def is_excluded(file_path: Path) -> bool:
                 try:
@@ -88,8 +102,14 @@ class DeplyRunner:
                     return True
                 return any(pattern.search(relative_path) for pattern in self.exclude_files)
 
-            filtered_files = [f for f in all_python_files if not is_excluded(f)]
-            self.all_files.extend(filtered_files)
+            for file_path in all_python_files:
+                if not is_excluded(file_path):
+                    included_files.setdefault(file_path.resolve(), file_path)
+
+        self.all_files = sorted(included_files.values())
+        self.metrics["files_discovered"] = len(discovered_files)
+        self.metrics["files_included"] = len(included_files)
+        self.metrics["files_excluded"] = len(discovered_files - included_files.keys())
 
     def collect_code_elements(self):
         logging.info(
@@ -105,6 +125,11 @@ class DeplyRunner:
             self.ignore_maps[file_path_str] = ignore_map
             if analysis_error:
                 self.analysis_errors.append(analysis_error)
+                self.metrics["files_parse_failed"] += 1
+            else:
+                self.metrics["files_parsed"] += 1
+                metric_name = "files_mapped" if results else "files_unmapped"
+                self.metrics[metric_name] += 1
             for layer_name, element in results:
                 self.layers[layer_name].code_elements.add(element)
                 self.code_element_to_layers.setdefault(element, set()).add(layer_name)
@@ -125,6 +150,11 @@ class DeplyRunner:
             logging.info(
                 f"Layer '{layer_name}' collected {len(layer.code_elements)} code elements."
             )
+
+        self.metrics["elements_mapped"] = len(self.code_element_to_layers)
+        self.metrics["elements_overlapping"] = sum(
+            len(layer_names) > 1 for layer_names in self.code_element_to_layers.values()
+        )
 
     def prepare_rules(self):
         logging.info("Preparing rules...")
@@ -153,7 +183,7 @@ class DeplyRunner:
             target = dependency.depends_on_code_element
             source_layers = self.code_element_to_layers.get(source)
             target_layers = self.code_element_to_layers.get(target)
-            self.metrics['total_dependencies'] += 1
+            self.metrics["dependencies_detected"] += 1
             if not source_layers or not target_layers:
                 return
             for source_layer in sorted(source_layers):
@@ -178,7 +208,7 @@ class DeplyRunner:
         if analysis_errors:
             return
         logging.info(
-            f"Analysis complete. Found {self.metrics['total_dependencies']} dependencies(s)."
+            f"Analysis complete. Found {self.metrics['dependencies_detected']} dependencies(s)."
         )
 
     def run_element_based_checks(self):
@@ -232,7 +262,7 @@ class DeplyRunner:
 
     def generate_report(self):
         logging.info("Generating report...")
-        return ReportGenerator(list(self.violations)).generate(self.args.report_format)
+        return ReportGenerator(list(self.violations), self.metrics).generate(self.args.report_format)
 
     def output_report(self, report):
         if self.args.output:
@@ -254,6 +284,10 @@ class DeplyRunner:
         print("Incomplete analysis:", file=sys.stderr)
         for analysis_error in sorted(self.analysis_errors):
             print(f"- {analysis_error}", file=sys.stderr)
+        metrics_summary = ", ".join(
+            f"{name}={value}" for name, value in self.metrics.items()
+        )
+        print(f"Analysis completeness: {metrics_summary}", file=sys.stderr)
         return False
 
     def run(self):

@@ -1,12 +1,17 @@
 import json
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Optional
 from ...models.violation import Violation
 
 
 class JsonReport:
-    def __init__(self, violations: List[Violation]):
+    def __init__(
+            self,
+            violations: List[Violation],
+            metrics: Optional[Dict[str, int]] = None,
+    ):
         self.violations = violations
+        self.metrics = dict(metrics) if metrics is not None else None
 
     def generate(self) -> str:
         grouped_violations = self._group_violations_by_type()
@@ -29,6 +34,8 @@ class JsonReport:
                 for violation in self.violations
             ],
         }
+        if self.metrics is not None:
+            data["metrics"] = self.metrics
 
         return json.dumps(data, indent=2)
 

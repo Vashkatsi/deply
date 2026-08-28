@@ -10,6 +10,19 @@ from deply.reports.report_generator import ReportGenerator
 
 
 class TestReports(unittest.TestCase):
+    metrics = {
+        "files_discovered": 2,
+        "files_excluded": 0,
+        "files_included": 2,
+        "files_parsed": 2,
+        "files_parse_failed": 0,
+        "files_mapped": 1,
+        "files_unmapped": 1,
+        "elements_mapped": 1,
+        "elements_overlapping": 0,
+        "dependencies_detected": 3,
+    }
+
     @staticmethod
     def _build_violation(
         file_path: str,
@@ -35,7 +48,7 @@ class TestReports(unittest.TestCase):
             self._build_violation("c.py", 1, 0, "third", ViolationType.FUNCTION_NAMING),
         ]
 
-        report_output = GitHubActionsReport(violations).generate().splitlines()
+        report_output = GitHubActionsReport(violations, self.metrics).generate().splitlines()
 
         warning_lines = [line for line in report_output if line.startswith("::warning")]
         self.assertEqual(len(warning_lines), 3)
@@ -50,6 +63,8 @@ class TestReports(unittest.TestCase):
         self.assertIn("# Class Naming: 2", report_output)
         self.assertIn("# Function Naming: 1", report_output)
         self.assertIn("# Total Violations: 3", report_output)
+        self.assertEqual(report_output[-10], "# files_discovered: 2")
+        self.assertEqual(report_output[-1], "# dependencies_detected: 3")
 
     def test_json_report_generates_expected_payload(self):
         violations = [
@@ -57,7 +72,7 @@ class TestReports(unittest.TestCase):
             self._build_violation("app.py", 20, 2, "naming issue", ViolationType.FUNCTION_NAMING),
         ]
 
-        payload = json.loads(JsonReport(violations).generate())
+        payload = json.loads(JsonReport(violations, self.metrics).generate())
 
         self.assertEqual(payload["total_violations"], 2)
         self.assertEqual(payload["by_type"]["disallowed_dependency"], 1)
@@ -65,6 +80,7 @@ class TestReports(unittest.TestCase):
         self.assertEqual(payload["violations"][0]["file"], "app.py")
         self.assertEqual(payload["violations"][0]["violation_type"], "disallowed_dependency")
         self.assertEqual(payload["violations"][1]["violation_type"], "function_naming")
+        self.assertEqual(payload["metrics"], self.metrics)
 
     def test_report_generator_supports_all_formats_and_text_fallback(self):
         violations = [
@@ -73,15 +89,26 @@ class TestReports(unittest.TestCase):
 
         text_report = ReportGenerator(violations).generate("text")
         self.assertIn("Violations report", text_report)
+        self.assertNotIn("Analysis completeness", text_report)
 
         json_report = ReportGenerator(violations).generate("json")
-        self.assertEqual(json.loads(json_report)["total_violations"], 1)
+        json_payload = json.loads(json_report)
+        self.assertEqual(json_payload["total_violations"], 1)
+        self.assertNotIn("metrics", json_payload)
 
         github_actions_report = ReportGenerator(violations).generate("github-actions")
         self.assertIn("::warning file=x.py,line=1,col=0::message", github_actions_report)
+        self.assertNotIn("# files_discovered", github_actions_report)
 
         unknown_report = ReportGenerator(violations).generate("unknown-format")
         self.assertIn("Violations report", unknown_report)
+
+    def test_report_generator_adds_metrics_to_text_report(self):
+        report = ReportGenerator([], self.metrics).generate("text")
+
+        self.assertIn("Analysis completeness", report)
+        self.assertIn("files_discovered: 2", report)
+        self.assertIn("dependencies_detected: 3", report)
 
     def test_report_generator_stabilizes_same_location_violation_order(self):
         violations = [

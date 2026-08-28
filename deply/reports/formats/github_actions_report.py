@@ -1,12 +1,17 @@
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from ...models.violation import Violation
 
 
 class GitHubActionsReport:
-    def __init__(self, violations: List[Violation]):
+    def __init__(
+            self,
+            violations: List[Violation],
+            metrics: Optional[Dict[str, int]] = None,
+    ):
         self.violations = violations
+        self.metrics = dict(metrics) if metrics is not None else None
 
     def generate(self) -> str:
         grouped_violations = self._group_violations_by_type()
@@ -25,6 +30,8 @@ class GitHubActionsReport:
         for violation_type, type_violations in grouped_violations.items():
             lines.append(f"# {violation_type}: {len(type_violations)}")
         lines.append(f"# Total Violations: {total_count}")
+        if self.metrics is not None:
+            lines.extend(f"# {name}: {value}" for name, value in self.metrics.items())
 
         return "\n".join(lines)
 
