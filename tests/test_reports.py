@@ -89,12 +89,16 @@ class TestReports(unittest.TestCase):
 
         text_report = ReportGenerator(violations).generate("text")
         self.assertIn("Violations report", text_report)
+        self.assertNotIn("Analysis completeness", text_report)
 
         json_report = ReportGenerator(violations).generate("json")
-        self.assertEqual(json.loads(json_report)["total_violations"], 1)
+        json_payload = json.loads(json_report)
+        self.assertEqual(json_payload["total_violations"], 1)
+        self.assertNotIn("metrics", json_payload)
 
         github_actions_report = ReportGenerator(violations).generate("github-actions")
         self.assertIn("::warning file=x.py,line=1,col=0::message", github_actions_report)
+        self.assertNotIn("# files_discovered", github_actions_report)
 
         unknown_report = ReportGenerator(violations).generate("unknown-format")
         self.assertIn("Violations report", unknown_report)

@@ -7,7 +7,7 @@ nav_order: 10
 # Technical Roadmap
 
 This roadmap prioritizes correctness before adoption and performance work. The
-assessment reflects the codebase on 2026-08-07.
+assessment reflects the codebase on 2026-08-28.
 
 ## Priority order
 

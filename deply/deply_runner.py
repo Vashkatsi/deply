@@ -88,12 +88,12 @@ class DeplyRunner:
     def collect_all_files(self):
         logging.info("Collecting all files...")
         discovered_files: Set[Path] = set()
-        included_files: Set[Path] = set()
+        included_files: Dict[Path, Path] = {}
         for base_path in self.paths:
             if not base_path.exists():
                 continue
             all_python_files = [f for f in base_path.rglob("*.py") if f.is_file()]
-            discovered_files.update(all_python_files)
+            discovered_files.update(file_path.resolve() for file_path in all_python_files)
 
             def is_excluded(file_path: Path) -> bool:
                 try:
@@ -102,12 +102,14 @@ class DeplyRunner:
                     return True
                 return any(pattern.search(relative_path) for pattern in self.exclude_files)
 
-            included_files.update(f for f in all_python_files if not is_excluded(f))
+            for file_path in all_python_files:
+                if not is_excluded(file_path):
+                    included_files.setdefault(file_path.resolve(), file_path)
 
-        self.all_files = sorted(included_files)
+        self.all_files = sorted(included_files.values())
         self.metrics["files_discovered"] = len(discovered_files)
         self.metrics["files_included"] = len(included_files)
-        self.metrics["files_excluded"] = len(discovered_files - included_files)
+        self.metrics["files_excluded"] = len(discovered_files - included_files.keys())
 
     def collect_code_elements(self):
         logging.info(

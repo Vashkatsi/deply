@@ -186,12 +186,17 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
         self.assertEqual(payload["metrics"], self.runner.metrics)
 
     def test_collect_all_files_skips_non_existent_paths(self):
-        self.runner.paths = [Path("/tmp/deply_non_existent_path")]
-        self.runner.exclude_files = []
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            file_path = project_path / "service.py"
+            file_path.write_text("class Service:\n    pass\n")
+            self.runner.paths = [Path("/tmp/deply_non_existent_path"), project_path]
+            self.runner.exclude_files = []
 
-        self.runner.collect_all_files()
+            self.runner.collect_all_files()
 
-        self.assertEqual(self.runner.all_files, [])
+        self.assertEqual(self.runner.all_files, [file_path])
+        self.assertEqual(self.runner.metrics["files_discovered"], 1)
 
     def test_collect_all_files_handles_relative_to_error(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -235,14 +240,14 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             },
         )
 
-    def test_collect_all_files_deduplicates_overlapping_paths_and_keeps_included_file(self):
+    def test_collect_all_files_deduplicates_canonical_paths_and_keeps_included_file(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             base_path = Path(temporary_directory)
             nested_path = base_path / "nested"
             nested_path.mkdir()
             file_path = nested_path / "service.py"
             file_path.write_text("class Service:\n    pass\n")
-            self.runner.paths = [base_path, nested_path]
+            self.runner.paths = [base_path, nested_path, nested_path / ".."]
             self.runner.exclude_files = [re.compile(r"^nested/service\.py$")]
 
             self.runner.collect_all_files()
@@ -282,6 +287,7 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
 
         def run_analyzer():
             analyzer_class.call_args.kwargs["dependency_handler"](dependency)
+            analyzer_class.call_args.kwargs["dependency_handler"](dependency)
             return []
 
         with patch("deply.deply_runner.CodeAnalyzer") as analyzer_class:
@@ -289,11 +295,12 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             with patch.object(self.runner.mermaid_builder, "add_edge") as add_edge:
                 self.runner.analyze_dependencies()
 
-        self.assertEqual(self.runner.metrics["dependencies_detected"], 1)
+        self.assertEqual(self.runner.metrics["dependencies_detected"], 2)
         self.assertEqual(len(self.runner.violations), 1)
         violation = next(iter(self.runner.violations))
         self.assertEqual(violation.dependency, dependency)
-        add_edge.assert_called_once_with("views", "models", True)
+        self.assertEqual(add_edge.call_count, 2)
+        add_edge.assert_called_with("views", "models", True)
 
     def test_analyze_dependencies_checks_every_layer_membership_pair(self):
         source_element = CodeElement(
@@ -470,11 +477,20 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             project_path.mkdir()
             (project_path / "service.py").write_text("def service():\n    pass\n")
             self.runner.args.config = str(self._write_config(project_path, r"never-matches"))
+            output_path = Path(temporary_directory) / "report.json"
+            self.runner.args.output = str(output_path)
 
-            with patch("sys.stderr", new=io.StringIO()) as error_stream:
+            with patch("sys.stdout", new=io.StringIO()) as output_stream, patch(
+                "sys.stderr",
+                new=io.StringIO(),
+            ) as error_stream:
                 result = self.runner.run()
+            report_exists = output_path.exists()
+            standard_output = output_stream.getvalue()
 
         self.assertFalse(result)
+        self.assertFalse(report_exists)
+        self.assertEqual(standard_output, "")
         self.assertEqual(
             error_stream.getvalue(),
             "Incomplete analysis:\n"
@@ -491,12 +507,19 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             with self.subTest(parallel=parallel), tempfile.TemporaryDirectory() as temporary_directory:
                 project_path = Path(temporary_directory) / "project"
                 project_path.mkdir()
-                (project_path / "service.py").write_text("class Service:\n    pass\n")
-                invalid_file_path = project_path / "invalid.py"
-                invalid_file_path.write_text("def invalid(:\n")
+                for file_name in ("mapped_one.py", "mapped_two.py"):
+                    (project_path / file_name).write_text("class Service:\n    pass\n")
+                for file_name in ("unmapped_one.py", "unmapped_two.py"):
+                    (project_path / file_name).write_text("def helper():\n    pass\n")
+                invalid_file_paths = [
+                    project_path / "invalid_one.py",
+                    project_path / "invalid_two.py",
+                ]
+                for invalid_file_path in invalid_file_paths:
+                    invalid_file_path.write_text("def invalid(:\n")
                 self.runner = DeplyRunner(
                     argparse.Namespace(
-                        config=str(self._write_config(project_path)),
+                        config=str(self._write_config(project_path, r"mapped_.*\.py$")),
                         parallel=parallel,
                         report_format="text",
                         output=None,
@@ -513,21 +536,22 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
 
             self.assertFalse(result)
             self.assertEqual(self.runner.workers_count, 1 if parallel is None else 2)
-            self.assertIn(f"failed to analyze {invalid_file_path}:", error_stream.getvalue())
+            for invalid_file_path in invalid_file_paths:
+                self.assertIn(f"failed to analyze {invalid_file_path}:", error_stream.getvalue())
             metrics_by_mode.append(self.runner.metrics)
 
         self.assertEqual(metrics_by_mode[0], metrics_by_mode[1])
         self.assertEqual(
             metrics_by_mode[0],
             {
-                "files_discovered": 2,
+                "files_discovered": 6,
                 "files_excluded": 0,
-                "files_included": 2,
-                "files_parsed": 1,
-                "files_parse_failed": 1,
-                "files_mapped": 1,
-                "files_unmapped": 0,
-                "elements_mapped": 1,
+                "files_included": 6,
+                "files_parsed": 4,
+                "files_parse_failed": 2,
+                "files_mapped": 2,
+                "files_unmapped": 2,
+                "elements_mapped": 2,
                 "elements_overlapping": 0,
                 "dependencies_detected": 0,
             },
