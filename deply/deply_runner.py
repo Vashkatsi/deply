@@ -260,7 +260,7 @@ class DeplyRunner:
 
     def generate_report(self):
         logging.info("Generating report...")
-        return ReportGenerator(list(self.violations)).generate(self.args.report_format)
+        return ReportGenerator(list(self.violations), self.metrics).generate(self.args.report_format)
 
     def output_report(self, report):
         if self.args.output:
@@ -282,6 +282,10 @@ class DeplyRunner:
         print("Incomplete analysis:", file=sys.stderr)
         for analysis_error in sorted(self.analysis_errors):
             print(f"- {analysis_error}", file=sys.stderr)
+        metrics_summary = ", ".join(
+            f"{name}={value}" for name, value in self.metrics.items()
+        )
+        print(f"Analysis completeness: {metrics_summary}", file=sys.stderr)
         return False
 
     def run(self):

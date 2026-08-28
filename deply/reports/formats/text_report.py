@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from ...models.violation import Violation
 
@@ -43,8 +43,13 @@ class SummaryTable:
 
 
 class TextReport:
-    def __init__(self, violations: List[Violation]):
+    def __init__(
+            self,
+            violations: List[Violation],
+            metrics: Optional[Dict[str, int]] = None,
+    ):
         self.violations = violations
+        self.metrics = dict(metrics) if metrics is not None else None
 
     def generate(self) -> str:
         grouped_violations = self._group_violations_by_type()
@@ -71,6 +76,10 @@ class TextReport:
         # 3) Generate the summary table
         summary_table = SummaryTable(summary_data)
         lines.append(summary_table.generate())
+
+        if self.metrics is not None:
+            lines.extend(["", "Analysis completeness"])
+            lines.extend(f"{name}: {value}" for name, value in self.metrics.items())
 
         return "\n".join(lines)
 

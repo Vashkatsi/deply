@@ -1,6 +1,7 @@
 import argparse
 import codecs
 import io
+import json
 import re
 import tempfile
 import unittest
@@ -175,6 +176,14 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
         self.assertIn("report content", output)
         self.assertIn("[Mermaid Diagram of Layer Dependencies]", output)
         self.assertIn("graph LR", output)
+
+    def test_generate_report_includes_analysis_metrics(self):
+        self.runner.args.report_format = "json"
+        self.runner.metrics["files_discovered"] = 3
+
+        payload = json.loads(self.runner.generate_report())
+
+        self.assertEqual(payload["metrics"], self.runner.metrics)
 
     def test_collect_all_files_skips_non_existent_paths(self):
         self.runner.paths = [Path("/tmp/deply_non_existent_path")]
@@ -453,6 +462,7 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
 
         self.assertFalse(result)
         self.assertIn("Incomplete analysis:\n- no Python files found", error_stream.getvalue())
+        self.assertIn("Analysis completeness: files_discovered=0", error_stream.getvalue())
 
     def test_run_fails_when_no_elements_map_to_a_layer(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -467,7 +477,12 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
         self.assertFalse(result)
         self.assertEqual(
             error_stream.getvalue(),
-            "Incomplete analysis:\n- no code elements mapped to configured layers\n",
+            "Incomplete analysis:\n"
+            "- no code elements mapped to configured layers\n"
+            "Analysis completeness: files_discovered=1, files_excluded=0, "
+            "files_included=1, files_parsed=1, files_parse_failed=0, "
+            "files_mapped=0, files_unmapped=1, elements_mapped=0, "
+            "elements_overlapping=0, dependencies_detected=0\n",
         )
 
     def test_run_fails_on_parse_error_in_sequential_and_parallel_modes(self):
