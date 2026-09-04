@@ -235,12 +235,19 @@ jobs:
           python -m pip install --upgrade pip twine
           python -m twine check dist/*
 
-      - name: Run wheel smoke test
+      - name: Run distribution smoke tests
         run: |
-          python -m venv /tmp/deply-smoke
-          /tmp/deply-smoke/bin/pip install --upgrade pip
-          /tmp/deply-smoke/bin/pip install dist/*.whl
-          /tmp/deply-smoke/bin/deply --version
+          EXPECTED_VERSION="${GITHUB_REF_NAME#v}"
+          python -m venv /tmp/deply-wheel-smoke
+          /tmp/deply-wheel-smoke/bin/pip install --upgrade pip
+          /tmp/deply-wheel-smoke/bin/pip install dist/*.whl
+          WHEEL_VERSION=$(/tmp/deply-wheel-smoke/bin/deply --version)
+          [[ "${WHEEL_VERSION}" == "deply ${EXPECTED_VERSION}" ]]
+          python -m venv /tmp/deply-sdist-smoke
+          /tmp/deply-sdist-smoke/bin/pip install --upgrade pip
+          /tmp/deply-sdist-smoke/bin/pip install dist/*.tar.gz
+          SDIST_VERSION=$(/tmp/deply-sdist-smoke/bin/deply --version)
+          [[ "${SDIST_VERSION}" == "deply ${EXPECTED_VERSION}" ]]
 
       - name: Publish to PyPI
         env:

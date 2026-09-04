@@ -6,7 +6,7 @@ nav_order: 9
 
 # Deply Config Agent Skill
 
-Deply v1.1.0 ships a portable Agent Skill at `skills/deply-config/`. Use it with Codex, Claude Code, or any Agent Skills-compatible assistant to create and validate `deply.yaml` for a Python project.
+Deply v1.1.1 ships a portable Agent Skill at `skills/deply-config/`. Use it with Codex, Claude Code, or any Agent Skills-compatible assistant to create and validate `deply.yaml` for a Python project.
 
 The skill guides the assistant through:
 
