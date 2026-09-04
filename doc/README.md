@@ -62,8 +62,7 @@ Welcome to the Deply documentation! This documentation will help you understand 
 
 Deply is a standalone Python tool for enforcing architectural patterns and dependencies in large Python projects. By analyzing code structure and dependencies, this tool ensures that architectural rules are followed, promoting cleaner, more maintainable, and modular codebases.
 
-![Static Badge](https://img.shields.io/badge/stable-v1.1.0-319cd2)
-![Static Badge](https://img.shields.io/badge/downloads->2_k_month-2282c2)
-![Static Badge](https://img.shields.io/badge/test-passing-98c525)
-![Static Badge](https://img.shields.io/badge/coverage-97%25-98c525)
-![Static Badge](https://img.shields.io/badge/python-3.8_|_3.9_|3.10_|_3.11_|_3.12_|_3.13_|_3.14-98c525) 
+[![PyPI version](https://img.shields.io/pypi/v/deply)](https://pypi.org/project/deply/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/deply)](https://pypi.org/project/deply/)
+[![CI](https://github.com/Vashkatsi/deply/actions/workflows/ci.yml/badge.svg)](https://github.com/Vashkatsi/deply/actions/workflows/ci.yml)
+[![Python versions](https://img.shields.io/pypi/pyversions/deply)](https://pypi.org/project/deply/)
