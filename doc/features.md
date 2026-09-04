@@ -18,7 +18,7 @@ You can easily configure collectors for each layer using:
 - File patterns
 - Class inheritance
 - Logical conditions
-- Custom rules
+- Custom collectors
 
 This flexibility allows you to adapt Deply to your project's specific needs.
 
@@ -31,9 +31,9 @@ Specify rules to control how different layers can interact with each other. For 
 
 ## Extensible and Configurable
 
-Deply is designed to be highly configurable and extensible:
+Deply is configurable and extensible through:
 - Custom collectors for specific needs
-- Flexible rule definitions
+- Supported naming, decorator, inheritance, dependency, and external-import rules
 - Support for various project structures
 - Integration with existing codebases
 

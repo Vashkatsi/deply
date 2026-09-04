@@ -6,11 +6,10 @@ For example, you can use Deply to ensure that modules/packages in your project a
 
 Deply can be used in a CI pipeline to make sure a pull request does not violate any of the architectural rules you defined. With the optional Mermaid formatter you can visualize your layers, rules and violations.
 
-![Static Badge](https://img.shields.io/badge/stable-v1.1.0-319cd2)
-![Static Badge](https://img.shields.io/badge/downloads->2_k_month-2282c2)
-![Static Badge](https://img.shields.io/badge/test-passing-98c525)
-![Static Badge](https://img.shields.io/badge/coverage-97%25-98c525)
-![Static Badge](https://img.shields.io/badge/python-3.8_|_3.9_|3.10_|_3.11_|_3.12_|_3.13_|_3.14-98c525)
+[![PyPI version](https://img.shields.io/pypi/v/deply)](https://pypi.org/project/deply/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/deply)](https://pypi.org/project/deply/)
+[![CI](https://github.com/Vashkatsi/deply/actions/workflows/ci.yml/badge.svg)](https://github.com/Vashkatsi/deply/actions/workflows/ci.yml)
+[![Python versions](https://img.shields.io/pypi/pyversions/deply)](https://pypi.org/project/deply/)
 
 ## Documentation
 You can find the documentation in the /doc directory or visit the doc page: https://vashkatsi.github.io/deply
@@ -110,7 +109,7 @@ standard error before exiting.
 
 ## Agent Skill
 
-Deply v1.0.0 includes a portable Agent Skill at `skills/deply-config/` for Codex, Claude Code, and other Agent Skills-compatible assistants. It helps an assistant inspect a Python project, generate `deply.yaml` with `light`, `medium`, or `strict` architecture rules, validate it with `deply validate`, run analysis, and add Makefile/CI/docs integration.
+Deply v1.1.0 includes a portable Agent Skill at `skills/deply-config/` for Codex, Claude Code, and other Agent Skills-compatible assistants. It helps an assistant inspect a Python project, generate `deply.yaml` using `light`, `medium`, or `strict` guidance, validate it with `deply validate`, run analysis, and add Makefile/CI/docs integration. These profiles belong to the Agent Skill; they are not built-in Deply CLI presets.
 
 Use it with:
 
@@ -124,13 +123,13 @@ See [Agent Skill](https://vashkatsi.github.io/deply/doc/skills.html) for install
 
 - **Layer-Based Analysis**: Define project layers and restrict their dependencies to enforce modularity.
 - **Dynamic Layer Configuration**: Easily configure collectors for each layer using file patterns, class inheritance, and logical conditions.
-- **Cross-Layer Dependency Rules**: Specify rules to disallow certain layers from accessing others.
-- **External Import Restrictions**: Prevent selected layers from importing framework, persistence, or SDK packages.
-- **Extensible and Configurable**: Customize layers and rules for any Python project setup.
+- **Cross-Layer Dependency Rules**: Specify rules to disallow certain layers from accessing others. Internal dependency inference currently matches unqualified names globally, so imported aliases may be missed and equal names may overmatch.
+- **External Import Restrictions**: Prevent selected layers from importing framework, persistence, or SDK package roots through absolute imports. Relative imports are ignored.
+- **Extensible and Configurable**: Customize layers with built-in or custom collectors and supported rules.
 - **Mermaid Diagrams**: Visualize your architecture and dependencies with Mermaid diagrams.
 - **Error Suppression**: Suppress specific rule violations with inline comments.
 - **Config Validation**: Validate `deply.yaml` explicitly or automatically before analysis.
-- **Architecture Recipes**: Start from validated configurations for 21 architecture and application patterns.
+- **Architecture Recipes**: Copy and adapt documented configurations for 21 architecture and application patterns; they are not built-in presets.
 
 ## Error Suppression
 
@@ -168,25 +167,9 @@ Or run `unittest` directly:
 python -m unittest discover tests
 ```
 
-## Roadmap 🚀
+## Roadmap
 
-A plan to evolve Deply into a must-have architectural guardian for Python projects:
-
-  🔲 Skip violations `skip_violations`  
-  🔲 Interactive config setup (`deply init` wizard)  
-  🔲 GitHub Actions/GitLab CI templates  
-  ✅ `# deply:ignore` suppression comments  
-  ✅ Config validation command (`deply validate`)
-  ✅ Parallel file analysis  
-  ✅ Custom collectors system  
-  🔲 Dependency graph caching  
-  🔲 Custom rules system  
-  ✅ FastAPI/Django/Flask configuration recipes
-  ✅ Architecture and application pattern recipes
-  ✅ LLM skill creation helpers
-  ✅ Third-party import restrictions (`disallow_external_imports`)
-
-See the [verified technical roadmap](doc/technical-roadmap.md) for priorities,
+See the [verified technical roadmap](doc/technical-roadmap.md) for current priorities,
 evidence, and implementation conditions.
 
 ## Further Documentation

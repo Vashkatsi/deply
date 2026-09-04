@@ -6,7 +6,7 @@ nav_order: 9
 
 # Deply Config Agent Skill
 
-Deply v1.0.0 ships a portable Agent Skill at `skills/deply-config/`. Use it with Codex, Claude Code, or any Agent Skills-compatible assistant to create and validate `deply.yaml` for a Python project.
+Deply v1.1.0 ships a portable Agent Skill at `skills/deply-config/`. Use it with Codex, Claude Code, or any Agent Skills-compatible assistant to create and validate `deply.yaml` for a Python project.
 
 The skill guides the assistant through:
 
@@ -15,8 +15,8 @@ The skill guides the assistant through:
 - create/update mode for new or improved configs
 - audit mode for existing `deply.yaml`, CI, docs, and suppressions
 - violation triage after `deply analyze`
-- architecture recipes for layered, hexagonal, Django, FastAPI, modular monolith, monorepo, and trading/ccxt-style systems
-- `light`, `medium`, and `strict` architecture presets
+- editable architecture recipes for layered, hexagonal, Django, FastAPI, modular monolith, monorepo, and trading/ccxt-style systems
+- `light`, `medium`, and `strict` Agent Skill profiles; these are guidance, not built-in Deply CLI presets
 - monorepo guidance for `apps/*`, `services/*`, `packages/*`, and `src/*`
 - framework-aware collectors for Django, FastAPI, Flask, Celery, and SQLAlchemy
 - install snippets for `pip`, `pipx`, `uv`, and `poetry`

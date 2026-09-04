@@ -7,7 +7,7 @@ nav_order: 10
 # Technical Roadmap
 
 This roadmap prioritizes correctness before adoption and performance work. The
-assessment reflects the codebase on 2026-08-28.
+assessment reflects the codebase on 2026-09-04.
 
 ## Priority order
 
@@ -84,27 +84,27 @@ assessment reflects the codebase on 2026-08-28.
    GitLab format without a separately verified GitLab integration.
 
 10. **Optimize only after measuring.** Files are parsed at least twice: during
-   collection and again by `CodeAnalyzer`. External-import checks add a third pass,
-   and eager `setdefault` evaluation can repeat it for overlapping file-layer pairs.
-   `--parallel` covers only collection. This is real duplicate work, but independently
-   parallelizing the old resolver would preserve its correctness problems. Benchmark
-   representative repositories after the resolver redesign, then reuse per-file
-   analysis results or parallelize only the measured bottleneck.
+    collection and again by `CodeAnalyzer`. External-import checks add a third pass,
+    while `--parallel` covers only collection. This is real duplicate work, but
+    independently parallelizing the old resolver would preserve its correctness
+    problems. Benchmark representative repositories after the resolver redesign,
+    then reuse per-file analysis results or parallelize only the measured bottleneck.
 
 ### Immediate documentation maintenance
 
-11. **Keep public claims verifiable.** Align package, skill, and documentation
-    versions; use a live downloads badge or remove the static claim; distinguish
-    exact import checks from heuristic symbol inference; describe recipes as
-    editable examples rather than built-in presets. These are confirmed factual
-    corrections and should not wait for feature demand.
+11. **Keep public claims verifiable — resolved.** Package, Agent Skill, and
+    documentation versions are aligned. Public badges use live PyPI and CI data.
+    Documentation distinguishes direct absolute-import checks from heuristic
+    internal symbol inference and describes recipes as editable examples rather
+    than built-in CLI presets.
 
 ### P3: defer until demand is demonstrated
 
 12. **Prefer scriptable presets over an interactive `deply init` wizard.** The 21
-    architecture recipes are documentation, not versioned built-in presets, and do
-    not currently define `light`, `medium`, or `strict` variants. If setup friction
-    is demonstrated, first add a small non-interactive command such as
+    architecture recipes are documentation, not versioned built-in CLI presets.
+    The Agent Skill's `light`, `medium`, and `strict` profiles are guidance, not
+    runtime features. If setup friction is demonstrated, first add a small
+    non-interactive command such as
     `deply init --preset fastapi` with validated packaged templates and safe
     overwrite behavior. Add a wizard only if users still need one.
 

@@ -8,3 +8,4 @@
 - Quote Jekyll braces in `rg` patterns.
 - Branch independent technical debt from fresh `origin/main`; leave deferred draft branches untouched.
 - Deduplicate configured paths by resolved identity, not lexical spelling.
+- Run skill validation with the project virtualenv.

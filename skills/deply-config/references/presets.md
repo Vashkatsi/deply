@@ -1,6 +1,6 @@
-# Deply Rule Presets
+# Agent Skill Strictness Profiles
 
-Use these presets as starting points, then adapt to the discovered project structure.
+Use these profiles as starting points, then adapt to the discovered project structure.
 
 ## Light
 

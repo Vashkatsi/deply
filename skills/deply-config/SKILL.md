@@ -1,9 +1,9 @@
 ---
 name: deply-config
-description: Create, audit, validate, and integrate Deply v1.0.0 architecture configuration files for Python projects. Use when the user asks to generate, improve, or review deply.yaml, set light/medium/strict architecture rules, support monorepos, add Deply validation or analysis to CI/Makefile, document Deply architecture boundaries, or adopt Deply in an existing Python repository.
+description: Use when creating, auditing, validating, or integrating Deply v1.1.0 architecture configuration files for Python projects, including deply.yaml, light/medium/strict guidance, monorepos, CI, Makefiles, and architecture documentation.
 license: MIT
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # Deply Config
@@ -24,10 +24,10 @@ Use this skill to create or audit a production-ready `deply.yaml` for a Python p
    - CI rollout: fail immediately or adopt with a temporary `--max-violations=N` ratchet.
 3. Read the needed references:
    - `references/discovery.md` first for deterministic repository inspection before asking questions.
-   - `references/deply-v1-schema.md` for exact Deply v1.0.0 YAML, collectors, rules, and validation constraints.
+   - `references/deply-v1-schema.md` for exact Deply v1.1.0 YAML, collectors, rules, and validation constraints.
    - `references/architecture-recipes.md` when choosing a target architecture style.
-   - `references/presets.md` for `light`, `medium`, and `strict` rule sets.
-   - `references/framework-presets.md` when the repo uses Django, FastAPI, Flask, Celery, or SQLAlchemy.
+   - `references/presets.md` for `light`, `medium`, and `strict` Agent Skill profiles.
+   - `references/framework-presets.md` for Agent Skill guidance when the repo uses Django, FastAPI, Flask, Celery, or SQLAlchemy.
    - `references/adoption-and-audit.md` when auditing an existing config or adopting Deply in a legacy project.
    - `references/monorepo.md` when the repo has multiple apps, packages, or services.
    - `references/violation-triage.md` when `deply analyze` reports violations.

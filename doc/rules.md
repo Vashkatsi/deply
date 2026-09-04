@@ -21,6 +21,10 @@ ruleset:
       - models
 ```
 
+Layer dependencies are inferred from Python AST names. The current resolver
+matches unqualified names globally, so imported aliases may be missed and
+same-named elements in different modules may both be reported.
+
 ### Function Decorator Rules
 
 Enforce the use of specific decorators on functions:
@@ -46,8 +50,10 @@ ruleset:
       - requests
 ```
 
-This flags `import requests` and `from django.db import models` in `domain`.
-Relative project imports such as `from .models import User` are ignored.
+This checks absolute `import` and `from` statements by their top-level package
+root, regardless of aliases. It flags `import requests` and
+`from django.db import models` in `domain`. Relative imports such as
+`from .models import User` are ignored.
 
 ### Class Inheritance Rules
 
@@ -99,8 +105,6 @@ ruleset:
     disallow_layer_dependencies:
       - models
       - repositories
-    allow_layer_dependencies:
-      - services
 ```
 
 ### Ensuring Task Decorators
