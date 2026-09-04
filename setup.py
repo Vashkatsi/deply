@@ -1,12 +1,15 @@
-from deply import __version__
+from runpy import run_path
+
 from setuptools import setup, find_packages
+
+PACKAGE_VERSION = run_path("deply/__init__.py")["__version__"]
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
     name="deply",
-    version=__version__,
+    version=PACKAGE_VERSION,
     author="Archil Abuladze",
     author_email="armiworker@gmail.com",
     description="A tool to enforce architectural patterns in python projects",

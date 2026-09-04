@@ -9,3 +9,6 @@
 - Branch independent technical debt from fresh `origin/main`; leave deferred draft branches untouched.
 - Deduplicate configured paths by resolved identity, not lexical spelling.
 - Run skill validation with the project virtualenv.
+- Match local release builds to the workflow command.
+- Run setup.py checks in the build virtualenv.
+- Recreate temporary smoke environments before reuse.

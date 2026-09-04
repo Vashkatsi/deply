@@ -1,9 +1,9 @@
 ---
 name: deply-config
-description: Use when creating, auditing, validating, or integrating Deply v1.1.0 architecture configuration files for Python projects, including deply.yaml, light/medium/strict guidance, monorepos, CI, Makefiles, and architecture documentation.
+description: Use when creating, auditing, validating, or integrating Deply v1.1.1 architecture configuration files for Python projects, including deply.yaml, light/medium/strict guidance, monorepos, CI, Makefiles, and architecture documentation.
 license: MIT
 metadata:
-  version: "1.1.0"
+  version: "1.1.1"
 ---
 
 # Deply Config
@@ -24,7 +24,7 @@ Use this skill to create or audit a production-ready `deply.yaml` for a Python p
    - CI rollout: fail immediately or adopt with a temporary `--max-violations=N` ratchet.
 3. Read the needed references:
    - `references/discovery.md` first for deterministic repository inspection before asking questions.
-   - `references/deply-v1-schema.md` for exact Deply v1.1.0 YAML, collectors, rules, and validation constraints.
+   - `references/deply-v1-schema.md` for exact Deply v1.1.1 YAML, collectors, rules, and validation constraints.
    - `references/architecture-recipes.md` when choosing a target architecture style.
    - `references/presets.md` for `light`, `medium`, and `strict` Agent Skill profiles.
    - `references/framework-presets.md` for Agent Skill guidance when the repo uses Django, FastAPI, Flask, Celery, or SQLAlchemy.
