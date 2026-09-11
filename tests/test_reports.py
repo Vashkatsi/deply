@@ -1,6 +1,10 @@
 import json
 import unittest
+import tempfile
 from pathlib import Path
+from unittest.mock import patch
+
+from deply import __version__
 
 from deply.models.violation import Violation
 from deply.models.violation_types import ViolationType
@@ -10,6 +14,61 @@ from deply.reports.report_generator import ReportGenerator
 
 
 class TestReports(unittest.TestCase):
+    def test_sarif_rules_results_and_metrics(self):
+        violations = [
+            self._build_violation("app.py", 2, 4, "z", ViolationType.FUNCTION_NAMING),
+            self._build_violation("app.py", 2, 4, "b", ViolationType.CLASS_NAMING),
+            self._build_violation("app.py", 2, 4, "a", ViolationType.CLASS_NAMING),
+        ]
+        payload = json.loads(ReportGenerator(violations, self.metrics).generate("sarif"))
+        self.assertEqual(payload["version"], "2.1.0")
+        self.assertEqual(payload["$schema"], "https://json.schemastore.org/sarif-2.1.0.json")
+        run = payload["runs"][0]
+        self.assertEqual(run["tool"]["driver"]["name"], "Deply")
+        self.assertEqual(run["tool"]["driver"]["version"], __version__)
+        rules = run["tool"]["driver"]["rules"]
+        self.assertEqual([rule["id"] for rule in rules], ["class_naming", "function_naming"])
+        self.assertEqual(rules[0]["shortDescription"], {"text": "Class Naming"})
+        self.assertEqual(rules[0]["helpUri"], "https://vashkatsi.github.io/deply/doc/rules.html")
+        self.assertEqual(run["properties"]["metrics"], self.metrics)
+        self.assertEqual([result["message"]["text"] for result in run["results"]], ["a", "b", "z"])
+        for result in run["results"]:
+            self.assertIn(result["ruleId"], [rule["id"] for rule in rules])
+            self.assertEqual(result["level"], "warning")
+            self.assertEqual(result["locations"][0]["physicalLocation"]["region"], {"startLine": 2})
+        self.assertEqual(
+            ReportGenerator(violations).generate("sarif"),
+            ReportGenerator(list(reversed(violations))).generate("sarif"),
+        )
+
+    def test_sarif_empty_results(self):
+        run = json.loads(ReportGenerator([]).generate("sarif"))["runs"][0]
+        self.assertEqual(run["results"], [])
+        self.assertEqual(run["tool"]["driver"]["rules"], [])
+        self.assertNotIn("properties", run)
+
+    def test_sarif_file_uris_and_unknown_line(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            source_root = root / "project"
+            source_root.mkdir()
+            target = source_root / "модуль #%.py"
+            target.touch()
+            alias = source_root / "alias.py"
+            alias.symlink_to(target)
+            outside = root / "outside file.py"
+            for file_path, expected_location in [
+                (target, {"uri": "%D0%BC%D0%BE%D0%B4%D1%83%D0%BB%D1%8C%20%23%25.py", "uriBaseId": "%SRCROOT%"}),
+                (alias, {"uri": "%D0%BC%D0%BE%D0%B4%D1%83%D0%BB%D1%8C%20%23%25.py", "uriBaseId": "%SRCROOT%"}),
+                (outside, {"uri": outside.as_uri()}),
+            ]:
+                with self.subTest(file=file_path), patch("pathlib.Path.cwd", return_value=source_root):
+                    violation = self._build_violation(str(file_path), 0, 5, "message", ViolationType.CLASS_NAMING)
+                    run = json.loads(ReportGenerator([violation]).generate("sarif"))["runs"][0]
+                    location = run["results"][0]["locations"][0]["physicalLocation"]
+                    self.assertEqual(location, {"artifactLocation": expected_location})
+                    self.assertEqual(run["originalUriBaseIds"]["%SRCROOT%"]["uri"], source_root.as_uri() + "/")
+
     metrics = {
         "files_discovered": 2,
         "files_excluded": 0,

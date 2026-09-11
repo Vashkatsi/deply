@@ -129,6 +129,7 @@ See [Agent Skill](https://vashkatsi.github.io/deply/doc/skills.html) for install
 - **Mermaid Diagrams**: Visualize your architecture and dependencies with Mermaid diagrams.
 - **Error Suppression**: Suppress specific rule violations with inline comments.
 - **Config Validation**: Validate `deply.yaml` explicitly or automatically before analysis.
+- **SARIF Reports**: Export findings for GitHub Code Scanning with `deply analyze --report-format=sarif --output=deply.sarif`. See the [CLI guide](doc/cli.md#sarif-report) for upload instructions and limitations.
 - **Architecture Recipes**: Copy and adapt documented configurations for 21 architecture and application patterns; they are not built-in presets.
 
 ## Error Suppression

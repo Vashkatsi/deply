@@ -12,3 +12,6 @@
 - Match local release builds to the workflow command.
 - Run setup.py checks in the build virtualenv.
 - Recreate temporary smoke environments before reuse.
+- Verify test filenames with `rg --files`; review suggestions may name nonexistent modules.
+- Build CLI test configs from existing rule examples; ruleset layer values are mappings.
+- Use the project virtualenv for YAML checks; resolve schema download paths from the upstream tree.
