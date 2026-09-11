@@ -1,4 +1,5 @@
 import logging
+import json
 import sys
 import tempfile
 import unittest
@@ -14,6 +15,52 @@ from deply.main import main, validate_configuration
 
 
 class TestMainAndConfigParser(unittest.TestCase):
+    def test_sarif_cli_output_and_failure_contract(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            source_path = project_path / "app.py"
+            configuration_path = project_path / "deply.yaml"
+            configuration_path.write_text(yaml.safe_dump({"deply": {
+                "paths": [str(project_path)],
+                "layers": [{"name": "app", "collectors": [{"type": "file_regex", "regex": ".*"}]}],
+                "ruleset": {"app": {"enforce_class_naming": [
+                    {"type": "class_name_regex", "class_name_regex": "^Expected$"},
+                ]}},
+            }}))
+            for source, threshold, write_file, mermaid, expected_exit, count in [
+                ("class Actual: pass\n", 0, False, False, 1, 1),
+                ("class Actual: pass\n", 1, True, True, 0, 1),
+                ("class Expected: pass\n", 0, True, False, 0, 0),
+                ("class Broken:\n", 0, True, False, 1, None),
+            ]:
+                with self.subTest(source=source, threshold=threshold):
+                    source_path.write_text(source)
+                    output_path = project_path / "report.sarif"
+                    if output_path.exists():
+                        output_path.unlink()
+                    arguments = ["deply", "analyze", "--config", str(configuration_path),
+                                 "--report-format", "sarif", "--max-violations", str(threshold)]
+                    if write_file:
+                        arguments.extend(["--output", str(output_path)])
+                    if mermaid:
+                        arguments.append("--mermaid")
+                    with patch.object(sys, "argv", arguments), patch("sys.stdout", new=StringIO()) as output_stream, patch(
+                        "sys.stderr", new=StringIO()
+                    ) as error_stream:
+                        with self.assertRaises(SystemExit) as exit_context:
+                            main()
+                    self.assertEqual(exit_context.exception.code, expected_exit)
+                    if count is None:
+                        self.assertFalse(output_path.exists())
+                        self.assertEqual(output_stream.getvalue(), "")
+                        self.assertIn("Incomplete analysis:", error_stream.getvalue())
+                        continue
+                    payload = json.loads(output_path.read_text() if write_file else output_stream.getvalue())
+                    self.assertEqual(len(payload["runs"][0]["results"]), count)
+                    self.assertEqual(payload["runs"][0]["properties"]["metrics"]["files_parsed"], 1)
+                    if mermaid:
+                        self.assertIn("Mermaid Diagram", output_stream.getvalue())
+
     def test_main_version_flag_exits_with_zero_and_prints_version(self):
         with patch.object(sys, "argv", ["main.py", "--version"]), patch("sys.stdout", new=StringIO()) as output_stream:
             with self.assertRaises(SystemExit) as exit_context:

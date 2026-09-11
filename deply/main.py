@@ -40,7 +40,7 @@ def main():
     parser_analyze.add_argument(
         '--report-format',
         type=str,
-        choices=["text", "json", "github-actions"],
+        choices=["text", "json", "github-actions", "sarif"],
         default="text",
         help="Format of the output report"
     )
