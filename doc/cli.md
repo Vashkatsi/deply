@@ -46,7 +46,7 @@ deply --help
 ### Analyze Command Options
 
 - `--config`: Path to the configuration YAML file (default: `deply.yaml`)
-- `--report-format`: Format of the output report (choices: `text`, `json`, `github-actions`, default: `text`)
+- `--report-format`: Format of the output report (choices: `text`, `json`, `github-actions`, `sarif`, default: `text`)
 - `--output`: Output file for the report (if not specified, prints to console)
 - `--mermaid`: Generates a Mermaid diagram of layer dependencies
 - `--max-violations`: Maximum number of allowed violations before failing (default: 0)
@@ -156,6 +156,51 @@ pass parsed the file successfully. `files_mapped` and `files_unmapped`
 partition parsed files. `dependencies_detected` counts raw dependency events
 before layer-pair expansion, suppression, and violation checks. GitHub Actions
 reports expose the same metrics as comment lines without changing annotations.
+
+### SARIF Report
+
+```bash
+deply analyze --report-format=sarif --output=deply.sarif
+```
+
+SARIF 2.1.0 output contains rule IDs, messages, file locations, and metrics in
+`runs[0].properties.metrics`. Results use `warning` severity and line-level
+locations. Columns are omitted because Python AST offsets count UTF-8 bytes.
+Files inside the analysis working directory use relative URIs with an explicit
+source root; files outside it use absolute file URIs. Run from the repository
+root for GitHub uploads. Existing dependency-inference limitations still apply.
+
+An empty successful report has no results. Violations above `--max-violations`
+still produce a report and exit with status `1`. Invalid configuration or
+incomplete analysis exits `1` without writing a new report; an existing output
+file is not deleted. With `--mermaid`, use `--output` to keep diagram text out
+of the SARIF document.
+
+For an existing GitHub Actions job that checks out the sources and installs
+Deply, add these steps. The job needs `security-events: write` permission;
+private repositories also need `actions: read` and `contents: read`.
+
+{% raw %}
+```yaml
+- name: Analyze architecture
+  run: |
+    rm -f deply.sarif
+    deply analyze --report-format=sarif --output=deply.sarif
+
+- name: Upload architecture findings
+  if: ${{ !cancelled() && hashFiles('deply.sarif') != '' }}
+  uses: github/codeql-action/upload-sarif@v4
+  with:
+    sarif_file: deply.sarif
+    category: deply
+```
+{% endraw %}
+
+The upload runs even when findings fail the analysis step; the job retains
+that failure. Removing the previous file prevents stale uploads after an
+incomplete analysis. See [GitHub's upload documentation](https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/integrate-with-existing-tools/upload-sarif-file)
+for repository availability and permissions. Deply does not emit baseline
+fingerprints; the upload action can derive fingerprints from checked-out source.
 
 For more information about:
 - Mermaid diagrams, see the [Mermaid Diagrams](mermaid.html) documentation

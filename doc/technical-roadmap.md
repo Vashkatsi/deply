@@ -76,12 +76,11 @@ assessment reflects the codebase on 2026-09-04.
 
 ### P2: improve integrations
 
-9. **Add SARIF 2.1.0 output.** This is useful for GitHub Code Scanning and can be
-   implemented without a new dependency. Include stable rule IDs, source locations,
-   messages, and help links. Emit a fixed `warning` level, matching current GitHub
-   Actions output, until severity becomes an explicit violation property. Keep the
-   existing annotations for lightweight CI. Do not describe SARIF as a universal
-   GitLab format without a separately verified GitLab integration.
+9. **Add SARIF 2.1.0 output — resolved.** `--report-format=sarif` exports stable
+   rule IDs, line-level source locations, messages, help links, and completeness
+   metrics without a new dependency. Results use a fixed `warning` level.
+   Existing GitHub Actions annotations remain available. See the CLI guide for
+   GitHub upload instructions; GitLab integration is not verified.
 
 10. **Optimize only after measuring.** Files are parsed at least twice: during
     collection and again by `CodeAnalyzer`. External-import checks add a third pass,
@@ -123,7 +122,7 @@ assessment reflects the codebase on 2026-09-04.
 | 3 | Layer cycle detection | Valid as an opt-in rule | P1 | Useful after graph correctness; not every architecture forbids every cycle. |
 | 4 | Parallel dependency analysis | Performance concern valid; action unproven | P2 | Files are parsed at least twice, and more with external-import checks; profiling must justify the redesign. |
 | 5 | Improve name resolution | Valid and critical | P0 | Aliases are missed and duplicate names produce ambiguous dependencies. This requires module-aware identities, not another name heuristic. |
-| 6 | SARIF report | Valid | P2 | Good GitHub Code Scanning integration, but less important than correct findings. |
+| 6 | SARIF report | Resolved | P2 | SARIF 2.1.0 output and GitHub upload recipe; analysis accuracy limitations remain. |
 | 7 | `deply init` | Direction valid; wizard premature | P3 | Recipes are not packaged presets and the agent skill already reduces setup cost. Start with a scriptable preset only after measuring demand. |
 | 8 | Custom rule plugins | Technically valid; defer | P3 | No demonstrated demand and core rule contracts are not stable enough yet. |
 
@@ -167,5 +166,5 @@ Each item should be a separate change with focused regression tests:
 8. Add stable violation fingerprints after stable module identities.
 9. Add baseline support.
 10. Add the opt-in cycle rule.
-11. Add SARIF output.
+11. ~~Add SARIF output.~~ Resolved independently of the resolver.
 12. Optimize only with before/after benchmarks.
