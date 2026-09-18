@@ -80,6 +80,56 @@ class TestDependencyVisitor(unittest.TestCase):
         }
         self.assertEqual(actual_dependencies, expected_dependencies)
 
+    def test_imports_belong_to_nearest_collected_definition(self):
+        cases = [
+            ("def owner():\n    IMPORT", {"owner"}, [("owner", 2, 4)]),
+            ("async def owner():\n    IMPORT", {"owner"}, [("owner", 2, 4)]),
+            ("class Owner:\n    IMPORT", {"Owner"}, [("Owner", 2, 4)]),
+            ("class Owner:\n    def method(self):\n        IMPORT",
+             {"Owner", "Owner.method"}, [("Owner.method", 3, 8)]),
+            ("def owner():\n    def nested():\n        IMPORT\n    IMPORT",
+             {"owner", "owner.nested"}, [("owner.nested", 3, 8), ("owner", 4, 4)]),
+            ("def owner():\n    async def nested():\n        IMPORT\n    IMPORT",
+             {"owner"}, [("owner", 4, 4)]),
+            ("def owner():\n    class Nested:\n        IMPORT\n    IMPORT",
+             {"owner", "owner.Nested"}, [("owner.Nested", 3, 8), ("owner", 4, 4)]),
+            ("class Uncollected:\n    IMPORT", set(), []),
+            ("def owner():\n    if True:\n        IMPORT", {"owner"}, [("owner", 3, 8)]),
+            ("def owner():\n    try:\n        IMPORT\n    except ImportError:\n        pass",
+             {"owner"}, [("owner", 3, 8)]),
+            ("def owner():\n    for item in ():\n        IMPORT", {"owner"}, [("owner", 3, 8)]),
+            ("if True:\n    IMPORT", set(), [("sibling", 2, 4)]),
+        ]
+        for import_statement, dependency_type in (
+            ("import Target", "import"), ("from target import Target", "import_from"),
+        ):
+            for source, collected_names, expected in cases:
+                with self.subTest(import_statement=import_statement, source=source):
+                    syntax_tree = ast.parse(source.replace("IMPORT", import_statement)
+                                            + "\n\ndef sibling():\n    pass\n")
+                    set_ast_parents(syntax_tree)
+                    dependencies = []
+                    target = self._build_code_element("Target")
+                    visitor = DependencyVisitor(
+                        code_elements_in_file={
+                            name: self._build_code_element(name) for name in collected_names | {"sibling"}
+                        },
+                        dependency_types=[dependency_type],
+                        dependency_handler=dependencies.append,
+                        name_to_elements={"Target": {target}},
+                    )
+
+                    visitor.visit(syntax_tree)
+
+                    self.assertEqual(
+                        [(dependency.code_element.name, dependency.line, dependency.column)
+                         for dependency in dependencies],
+                        expected,
+                    )
+                    for dependency in dependencies:
+                        self.assertEqual(dependency.depends_on_code_element, target)
+                        self.assertEqual(dependency.dependency_type, dependency_type)
+
     def test_visit_collects_function_call_attribute_call_and_inheritance_dependencies(self):
         source_code = textwrap.dedent(
             """
