@@ -37,6 +37,12 @@ assessment reflects the codebase on 2026-09-04.
    the reliable core; call and attribute inference must be reported as heuristic
    when exact resolution is impossible.
 
+   **Completed slice: local import ownership.** Internal import edges inside a
+   function, async function, method, or class belong only to the nearest enclosing
+   definition when it is collected. Uncollected nested definitions no longer leak
+   their imports to other elements. Module-level imports retain file-wide
+   propagation. Module-aware target resolution and lexical binding remain pending.
+
 4. **Define one explicit layer-ownership contract — resolved.** An element belongs
    to every layer whose collector matches it. Dependency checks evaluate every
    unique source and target membership pair except equal layer names, and external

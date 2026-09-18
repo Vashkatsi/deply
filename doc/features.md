@@ -29,6 +29,14 @@ Specify rules to control how different layers can interact with each other. For 
 - Enforce service layer patterns
 - Control access to specific functionality
 
+Internal imports inside functions, async functions, methods, and class bodies
+are attributed only to the nearest enclosing definition when it is collected.
+Imports inside an uncollected definition are not attributed to other elements.
+Module-level imports still apply to every collected element in the file.
+Internal target matching remains heuristic: module identities, import aliases,
+relative imports, and shadowing are not reliably resolved. This ownership policy
+does not change the separate external-import rules.
+
 ## Extensible and Configurable
 
 Deply is configurable and extensible through:
