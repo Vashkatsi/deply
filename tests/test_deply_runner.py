@@ -302,6 +302,43 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
         self.assertEqual(add_edge.call_count, 2)
         add_edge.assert_called_with("views", "models", True)
 
+    def test_local_import_checks_only_the_importing_layer(self):
+        for import_statement in ("import Target", "from target import Target"):
+            for forbidden_layer in ("owner", "sibling"):
+                with self.subTest(import_statement=import_statement, forbidden_layer=forbidden_layer):
+                    with tempfile.TemporaryDirectory() as temporary_directory:
+                        project_path = Path(temporary_directory)
+                        source_path = project_path / "source.py"
+                        source_path.write_text(
+                            f"def owner():\n    {import_statement}\n\ndef sibling():\n    pass\n"
+                        )
+                        (project_path / "target.py").write_text("def Target():\n    pass\n")
+                        config_path = project_path / "deply.yaml"
+                        config_path.write_text(yaml.dump({"deply": {
+                            "paths": [str(project_path)],
+                            "layers": [
+                                {"name": name, "collectors": [{
+                                    "type": "function_name_regex", "function_name_regex": f"^{name}$",
+                                }]}
+                                for name in ("owner", "sibling", "Target")
+                            ],
+                            "ruleset": {forbidden_layer: {"disallow_layer_dependencies": ["Target"]}},
+                        }}))
+                        self.args.config = str(config_path)
+                        runner = DeplyRunner(self.args)
+
+                        with patch("sys.stdout", new=io.StringIO()):
+                            result = runner.run()
+
+                        self.assertEqual(runner.analysis_errors, [])
+                        self.assertEqual(result, forbidden_layer == "sibling")
+                        self.assertEqual(len(runner.violations), int(forbidden_layer == "owner"))
+                        if forbidden_layer == "owner":
+                            violation = next(iter(runner.violations))
+                            self.assertEqual(violation.file, source_path)
+                            self.assertEqual(violation.element_name, "owner")
+                            self.assertEqual((violation.line, violation.column), (2, 4))
+
     def test_analyze_dependencies_checks_every_layer_membership_pair(self):
         source_element = CodeElement(
             file=Path("source.py"),

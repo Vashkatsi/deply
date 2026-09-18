@@ -1,6 +1,6 @@
 import ast
 import logging
-from typing import Callable, Dict, List, Optional, Set
+from typing import Callable, Dict, Iterable, List, Optional, Set
 
 from deply.models.code_element import CodeElement
 from deply.models.dependency import Dependency
@@ -119,11 +119,12 @@ class DependencyVisitor(ast.NodeVisitor):
 
     def visit_Import(self, node):
         if 'import' in self.dependency_types:
+            source_elements = self._get_import_sources(node)
             for alias in node.names:
                 name = alias.asname or alias.name.split('.')[0]
                 dep_elements = self.name_to_elements.get(name, set())
                 for dep_element in dep_elements:
-                    for code_element in self.code_elements_in_file.values():
+                    for code_element in source_elements:
                         dependency = Dependency(
                             code_element=code_element,
                             depends_on_code_element=dep_element,
@@ -136,11 +137,12 @@ class DependencyVisitor(ast.NodeVisitor):
 
     def visit_ImportFrom(self, node):
         if 'import_from' in self.dependency_types:
+            source_elements = self._get_import_sources(node)
             for alias in node.names:
                 name = alias.asname or alias.name
                 dep_elements = self.name_to_elements.get(name, set())
                 for dep_element in dep_elements:
-                    for code_element in self.code_elements_in_file.values():
+                    for code_element in source_elements:
                         dependency = Dependency(
                             code_element=code_element,
                             depends_on_code_element=dep_element,
@@ -150,6 +152,15 @@ class DependencyVisitor(ast.NodeVisitor):
                         )
                         self.dependency_handler(dependency)
         self.generic_visit(node)
+
+    def _get_import_sources(self, node: ast.AST) -> Iterable[CodeElement]:
+        parent = getattr(node, 'parent', None)
+        while parent is not None:
+            if isinstance(parent, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                owner = self.code_elements_in_file.get(self._get_definition_full_name(parent))
+                return (owner,) if owner is not None else ()
+            parent = getattr(parent, 'parent', None)
+        return self.code_elements_in_file.values()
 
     def visit_Name(self, node):
         if 'name_load' in self.dependency_types and self.current_code_element:
