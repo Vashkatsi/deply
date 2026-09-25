@@ -7,7 +7,7 @@ For example, you can use Deply to ensure that modules/packages in your project a
 Deply can be used in a CI pipeline to make sure a pull request does not violate any of the architectural rules you defined. With the optional Mermaid formatter you can visualize your layers, rules and violations.
 
 [![PyPI version](https://img.shields.io/pypi/v/deply)](https://pypi.org/project/deply/)
-[![PyPI downloads](https://img.shields.io/pypi/dm/deply)](https://pypi.org/project/deply/)
+[![PyPI Stats](/api/badges/deply?period=month)](/packages/deply)
 [![CI](https://github.com/Vashkatsi/deply/actions/workflows/ci.yml/badge.svg)](https://github.com/Vashkatsi/deply/actions/workflows/ci.yml)
 [![Python versions](https://img.shields.io/pypi/pyversions/deply)](https://pypi.org/project/deply/)
 
