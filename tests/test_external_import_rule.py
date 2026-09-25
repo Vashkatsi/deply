@@ -1,4 +1,5 @@
 import argparse
+import ast
 import codecs
 import io
 import json
@@ -13,6 +14,7 @@ from deply.deply_runner import DeplyRunner, extract_absolute_imports
 from deply.models.code_element import CodeElement
 from deply.models.violation_types import ViolationType
 from deply.rules.external_import_rule import ExternalImportRule
+from deply.utils.ast_utils import parse_python_file
 
 
 class TestExternalImportRule(unittest.TestCase):
@@ -71,17 +73,14 @@ class TestExternalImportRule(unittest.TestCase):
 
 class TestExternalImportExtraction(unittest.TestCase):
     def test_extract_absolute_imports_handles_aliases_and_multiple_names(self):
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            file_path = Path(temporary_directory) / "service.py"
-            file_path.write_text(
-                "import requests as http, django.db\n"
-                "from sqlalchemy.orm import Session\n"
-                "from ccxt.pro import binance\n"
-                "from .entities import User\n"
-                "from ..shared import Money\n"
-            )
-
-            imports = extract_absolute_imports(file_path)
+        file_ast = ast.parse(
+            "import requests as http, django.db\n"
+            "from sqlalchemy.orm import Session\n"
+            "from ccxt.pro import binance\n"
+            "from .entities import User\n"
+            "from ..shared import Money\n"
+        )
+        imports = extract_absolute_imports(file_ast)
 
         self.assertEqual(
             imports,
@@ -93,26 +92,6 @@ class TestExternalImportExtraction(unittest.TestCase):
             ],
         )
 
-    def test_extract_absolute_imports_returns_empty_on_parse_error(self):
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            file_path = Path(temporary_directory) / "invalid.py"
-            file_path.write_text("def invalid(:\n")
-
-            imports = extract_absolute_imports(file_path)
-
-        self.assertEqual(imports, [])
-
-    def test_extract_absolute_imports_reports_parse_error(self):
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            file_path = Path(temporary_directory) / "invalid.py"
-            file_path.write_text("def invalid(:\n")
-            analysis_errors = []
-
-            extract_absolute_imports(file_path, analysis_errors)
-
-        self.assertEqual(len(analysis_errors), 1)
-        self.assertIn(f"failed to analyze {file_path}:", analysis_errors[0])
-
     def test_extract_absolute_imports_accepts_python_source_encodings(self):
         source_files = {
             "pep263": "# coding: latin-1\nimport requests\nname = 'café'\n".encode("latin-1"),
@@ -122,25 +101,16 @@ class TestExternalImportExtraction(unittest.TestCase):
             with self.subTest(source=source_name), tempfile.TemporaryDirectory() as temporary_directory:
                 file_path = Path(temporary_directory) / "service.py"
                 file_path.write_bytes(source_bytes)
-                analysis_errors = []
-
-                imports = extract_absolute_imports(file_path, analysis_errors)
+                file_ast, _ = parse_python_file(file_path)
+                imports = extract_absolute_imports(file_ast)
 
             self.assertEqual(imports, [("requests", 2 if source_name == "pep263" else 1, 0)])
-            self.assertEqual(analysis_errors, [])
 
 
 class TestExternalImportRunner(unittest.TestCase):
-    def test_runner_records_external_import_read_failure(self):
+    def test_runner_records_external_import_read_failure_during_collection(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             missing_file = Path(temporary_directory) / "missing.py"
-            element = CodeElement(
-                file=missing_file,
-                name="load_user",
-                element_type="function",
-                line=1,
-                column=0,
-            )
             runner = DeplyRunner(
                 argparse.Namespace(
                     config="deply.yaml",
@@ -151,10 +121,11 @@ class TestExternalImportRunner(unittest.TestCase):
                     max_violations=0,
                 )
             )
-            runner.code_element_to_layers = {element: {"domain"}}
+            runner.layers_config = [{"name": "domain"}]
+            runner.all_files = [missing_file]
             runner.rules = [ExternalImportRule("domain", ["requests"])]
 
-            runner.run_external_import_checks()
+            runner.collect_code_elements()
 
         self.assertEqual(len(runner.analysis_errors), 1)
         self.assertIn(f"failed to analyze {missing_file}:", runner.analysis_errors[0])
@@ -187,14 +158,11 @@ class TestExternalImportRunner(unittest.TestCase):
                 ExternalImportRule("application", ["requests"]),
                 ExternalImportRule("domain", ["requests"]),
             ]
+            runner.absolute_imports_by_file = {
+                file_path: [("requests", 1, 0)],
+            }
+            runner.run_external_import_checks()
 
-            with patch(
-                "deply.deply_runner.extract_absolute_imports",
-                wraps=extract_absolute_imports,
-            ) as extract_imports:
-                runner.run_external_import_checks()
-
-        self.assertEqual(extract_imports.call_count, 1)
         self.assertEqual(
             {violation.message.split("'")[1] for violation in runner.violations},
             {"application", "domain"},
@@ -255,7 +223,14 @@ class TestExternalImportRunner(unittest.TestCase):
                 )
             )
 
-            with patch("sys.stdout", new=io.StringIO()) as output_stream:
+            with patch(
+                "deply.deply_runner.parse_python_file",
+                wraps=parse_python_file,
+            ) as collection_parser, patch(
+                "deply.code_analyzer.parse_python_file", wraps=parse_python_file
+            ) as dependency_parser, patch(
+                "sys.stdout", new=io.StringIO()
+            ) as output_stream:
                 result = runner.run()
 
         payload = json.loads(output_stream.getvalue())
@@ -263,6 +238,8 @@ class TestExternalImportRunner(unittest.TestCase):
         self.assertFalse(result)
         self.assertEqual(payload["total_violations"], 2)
         self.assertEqual(payload["by_type"]["disallowed_external_import"], 2)
+        self.assertEqual(collection_parser.call_count, 2)
+        self.assertEqual(dependency_parser.call_count, 1)
         self.assertEqual(
             sorted(violation["line"] for violation in payload["violations"]),
             [1, 2],

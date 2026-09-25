@@ -405,6 +405,7 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             "service.py",
             [("services_layer", collected_element)],
             {"file": set(), "lines": {}},
+            [],
             None,
         )
 
@@ -453,6 +454,7 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
                         "service.py",
                         [(layer_name, collected_element) for layer_name in collected_layers],
                         {"file": set(), "lines": {}},
+                        [],
                         None,
                     ),
                 ):
@@ -471,7 +473,13 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             invalid_file_path = Path(temporary_file.name)
 
         try:
-            processed_file_path, processed_results, processed_ignore_map, analysis_error = process_file(
+            (
+                processed_file_path,
+                processed_results,
+                processed_ignore_map,
+                _,
+                analysis_error,
+            ) = process_file(
                 invalid_file_path,
                 [],
             )
@@ -489,7 +497,7 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
             invalid_file_path = Path(temporary_file.name)
 
         try:
-            _, _, _, analysis_error = process_file(invalid_file_path, [])
+            _, _, _, _, analysis_error = process_file(invalid_file_path, [])
         finally:
             invalid_file_path.unlink(missing_ok=True)
 

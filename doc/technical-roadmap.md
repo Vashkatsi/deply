@@ -88,12 +88,12 @@ assessment reflects the codebase on 2026-09-04.
    Existing GitHub Actions annotations remain available. See the CLI guide for
    GitHub upload instructions; GitLab integration is not verified.
 
-10. **Optimize only after measuring.** Files are parsed at least twice: during
-    collection and again by `CodeAnalyzer`. External-import checks add a third pass,
-    while `--parallel` covers only collection. This is real duplicate work, but
-    independently parallelizing the old resolver would preserve its correctness
-    problems. Benchmark representative repositories after the resolver redesign,
-    then reuse per-file analysis results or parallelize only the measured bottleneck.
+10. **Optimize only after measuring.** Collection parses each file once, and
+    `CodeAnalyzer` parses mapped files again. External-import checks reuse imports
+    extracted during collection when configured, so they no longer add a third
+    parse. `--parallel` still covers only collection. Benchmark representative
+    repositories after the resolver redesign, then optimize only the measured
+    bottleneck.
 
 ### Immediate documentation maintenance
 
