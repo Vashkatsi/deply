@@ -33,9 +33,32 @@ Internal imports inside functions, async functions, methods, and class bodies
 are attributed only to the nearest enclosing definition when it is collected.
 Imports inside an uncollected definition are not attributed to other elements.
 Module-level imports still apply to every collected element in the file.
-Internal target matching remains heuristic: module identities, import aliases,
-relative imports, and shadowing are not reliably resolved. This ownership policy
-does not change the separate external-import rules.
+
+Internal targets resolve through module identities, absolute and relative imports,
+aliases, and explicit package re-exports. Included files without collected elements
+still participate in resolution, so an import through `__init__.py` can reach a
+collected symbol in another file. Unrelated symbols with the same name do not
+match. Lookup accounts for parameters, local assignments, nested functions,
+comprehension bindings, and the distinction between class bodies and method scopes.
+
+For example, `from . import models` followed by
+`models.Project.objects.all()` resolves the known `Project` prefix. This works
+inside a collected function or a collected module-level assignment; it does not
+infer the runtime types of `objects` or `all()`.
+
+`paths` remains the scan configuration. Module roots follow regular package
+`__init__.py` chains, conventional `src` layouts, and namespace directories relative
+to scan roots. Overlapping scan directories are deduplicated. An import with
+multiple internal module candidates reports incomplete analysis instead of
+choosing one. Existing v1 YAML, collector matching, and layer membership remain
+supported; findings may change as missed dependencies and false matches are fixed.
+
+Resolution is static and does not execute imports or modify `sys.path`. Wildcard
+imports, dynamic instance types, and general control-flow analysis remain
+unsupported. Conditional bindings are conservatively unresolved, although their
+syntactic import edges are still checked. Unresolved references do not create
+guessed cross-module links. These limits and ownership rules do not change the
+separate external-import checks.
 
 ## Extensible and Configurable
 

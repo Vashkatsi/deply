@@ -100,7 +100,8 @@ deply --help
 `deply analyze` validates the configuration before scanning project files and
 exits with status `1` when the configuration is invalid or analysis is
 incomplete because files cannot be read or parsed, no Python files are found,
-or no code elements map to configured layers.
+no code elements map to configured layers, or an import resolves to ambiguous
+internal module paths.
 
 Every completed analysis report includes completeness metrics for discovered,
 excluded, parsed, mapped, and unmapped files; mapped and overlapping elements;
@@ -123,7 +124,7 @@ See [Agent Skill](https://vashkatsi.github.io/deply/doc/skills.html) for install
 
 - **Layer-Based Analysis**: Define project layers and restrict their dependencies to enforce modularity.
 - **Dynamic Layer Configuration**: Easily configure collectors for each layer using file patterns, class inheritance, and logical conditions.
-- **Cross-Layer Dependency Rules**: Specify rules to disallow certain layers from accessing others. Internal dependency inference currently matches unqualified names globally, so imported aliases may be missed and equal names may overmatch.
+- **Cross-Layer Dependency Rules**: Resolve internal dependencies through modules, absolute and relative imports, aliases, and lexical bindings before checking layer boundaries.
 - **External Import Restrictions**: Prevent selected layers from importing framework, persistence, or SDK package roots through absolute imports. Relative imports are ignored.
 - **Extensible and Configurable**: Customize layers with built-in or custom collectors and supported rules.
 - **Mermaid Diagrams**: Visualize your architecture and dependencies with Mermaid diagrams.
@@ -131,6 +132,14 @@ See [Agent Skill](https://vashkatsi.github.io/deply/doc/skills.html) for install
 - **Config Validation**: Validate `deply.yaml` explicitly or automatically before analysis.
 - **SARIF Reports**: Export findings for GitHub Code Scanning with `deply analyze --report-format=sarif --output=deply.sarif`. See the [CLI guide](doc/cli.md#sarif-report) for upload instructions and limitations.
 - **Architecture Recipes**: Copy and adapt documented configurations for 21 architecture and application patterns; they are not built-in presets.
+
+Existing v1 YAML configurations remain supported. Module-aware resolution removes
+unrelated same-name matches and can reveal previously missed violations. A known
+symbol prefix such as `models.Project` in `models.Project.objects.all()` resolves
+to the collected `Project` class without inferring Django runtime types.
+Wildcard imports, dynamic instance types, and general control-flow analysis remain
+unsupported. See [Features](doc/features.md#cross-layer-dependency-rules) for the
+resolution boundaries.
 
 ## Error Suppression
 

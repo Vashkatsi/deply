@@ -15,3 +15,4 @@
 - Verify test filenames with `rg --files`; review suggestions may name nonexistent modules.
 - Build CLI test configs from existing rule examples; ruleset layer values are mappings.
 - Use the project virtualenv for YAML checks; resolve schema download paths from the upstream tree.
+- Python module attributes require initializer bindings or loaded submodules; from-import fallback must respect regular-package directories.
