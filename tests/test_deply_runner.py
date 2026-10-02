@@ -303,7 +303,7 @@ class TestDeplyRunnerBehavior(unittest.TestCase):
         add_edge.assert_called_with("views", "models", True)
 
     def test_local_import_checks_only_the_importing_layer(self):
-        for import_statement in ("import Target", "from target import Target"):
+        for import_statement in ("import target", "from target import Target"):
             for forbidden_layer in ("owner", "sibling"):
                 with self.subTest(import_statement=import_statement, forbidden_layer=forbidden_layer):
                     with tempfile.TemporaryDirectory() as temporary_directory:

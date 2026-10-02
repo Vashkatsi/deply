@@ -43,7 +43,7 @@ class TestCodeAnalyzer(unittest.TestCase):
         views_dir = self.test_project_dir / 'views'
         views_dir.mkdir()
         views_py = views_dir / 'views.py'
-        views_py.write_text('from ..models.my_model import MyModel\n\ndef my_view():\n    model = MyModel()\n')
+        views_py.write_text('from models.my_model import MyModel\n\ndef my_view():\n    model = MyModel()\n')
 
         # Write config.yaml
         self.config_yaml = Path(self.test_dir) / 'config.yaml'

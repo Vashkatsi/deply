@@ -7,7 +7,7 @@ nav_order: 10
 # Technical Roadmap
 
 This roadmap prioritizes correctness before adoption and performance work. The
-assessment reflects the codebase on 2026-09-04.
+assessment reflects the codebase on 2026-10-02.
 
 ## Priority order
 
@@ -25,23 +25,31 @@ assessment reflects the codebase on 2026-09-04.
    async dependencies use their own element, while uncollected nested scopes remain
    unattributed instead of leaking into their parent.
 
-3. **Replace global name matching with module-aware resolution.** The dependency
-   index is keyed by unqualified element name. Import aliases are missed and equal
-   names in different modules resolve to every matching element. Build stable
-   identities from module path and qualified symbol name, then resolve absolute
-   imports, relative imports, and aliases against those identities. Track lexical
-   scopes, local imports, assignments, and shadowing so an import or name load is
-   attributed only to its real source. Represent modules as analysis nodes or define
-   explicit propagation from module-level imports to collected elements; lexical
-   scope tracking alone cannot supply that ownership. Import edges should remain
-   the reliable core; call and attribute inference must be reported as heuristic
-   when exact resolution is impossible.
+3. **Replace global name matching with module-aware resolution — core slice
+   completed.** An internal module and lexical-binding index resolves absolute and
+   relative imports, aliases, and explicit `__init__.py` re-exports through included
+   files, including files without collected elements. Duplicate names in unrelated
+   modules no longer match. Ambiguous internal module paths fail analysis rather
+   than choosing a target. Lookup handles parameters, local assignments, nested
+   functions, comprehensions, and class-versus-method scopes. Known attribute
+   prefixes such as `models.Project` resolve to the collected class in
+   `models.Project.objects.all()` without runtime type inference.
 
-   **Completed slice: local import ownership.** Internal import edges inside a
+   **Preserved ownership.** Internal import edges inside a
    function, async function, method, or class belong only to the nearest enclosing
    definition when it is collected. Uncollected nested definitions no longer leak
    their imports to other elements. Module-level imports retain file-wide
-   propagation. Module-aware target resolution and lexical binding remain pending.
+   propagation; collected module-level assignments own dependencies in their values.
+   Existing v1 YAML, collectors, rules, dependency payloads, and reports remain
+   supported. Scan paths provide module roots through regular packages, conventional
+   `src` layouts, and relative namespace directories without a new config schema.
+
+   **Pending: advanced resolution and completeness.** General control-flow analysis,
+   wildcard imports, and dynamic instance types remain unsupported. Conditional
+   bindings are conservatively unresolved, while syntactic import edges remain
+   checked. Unresolved references must not create guessed links; import edges
+   remain the reliable core, and attribute-prefix detection does not prove dynamic
+   call targets.
 
 4. **Define one explicit layer-ownership contract — resolved.** An element belongs
    to every layer whose collector matches it. Dependency checks evaluate every
@@ -54,14 +62,15 @@ assessment reflects the codebase on 2026-09-04.
 
 5. **Fail on incomplete analysis — resolved.** Collection and dependency-analysis
    read or parse failures are reported and make analysis fail. Analysis also fails
-   when no Python files are found or no elements map to configured layers.
+   when no Python files are found, no elements map to configured layers, or imports
+   resolve to ambiguous internal modules.
 
 6. **Report measurable analysis completeness — resolved.** Reports expose unique
    discovered, excluded, included, parsed, mapped, and unmapped files; mapped and
    overlapping elements; and raw detected dependencies. Incomplete analysis emits
    the available metrics with its errors. These counters reuse existing analysis
    passes. Unresolved references and stable violation fingerprints remain pending
-   because they require stable module and symbol identities.
+   until their resolution semantics and public violation identities are defined.
 
 ### P1: improve adoption after correctness
 
@@ -77,8 +86,8 @@ assessment reflects the codebase on 2026-09-04.
 8. **Add opt-in cycle detection.** Strongly connected components after projecting
    resolved dependencies onto the layer graph are useful, but a cycle is not
    universally forbidden. Expose a rule rather than an unconditional check and
-   report the shortest actionable cycle. Implement it after module-aware resolution;
-   running SCC over the current heuristic graph would amplify false positives.
+   report the shortest actionable cycle. Define how unresolved and heuristic edges
+   affect the graph first; cycles must not amplify inference errors.
 
 ### P2: improve integrations
 
@@ -89,7 +98,8 @@ assessment reflects the codebase on 2026-09-04.
    GitHub upload instructions; GitLab integration is not verified.
 
 10. **Optimize only after measuring.** Collection parses each file once, and
-    `CodeAnalyzer` parses mapped files again. External-import checks reuse imports
+    `CodeAnalyzer` parses included files again to index imports and re-exports.
+    External-import checks reuse imports
     extracted during collection when configured, so they no longer add a third
     parse. `--parallel` still covers only collection. Benchmark representative
     repositories after the resolver redesign, then optimize only the measured
@@ -126,8 +136,8 @@ assessment reflects the codebase on 2026-09-04.
 | 1 | Map an element to `Set[str]` | Resolved with explicit pair evaluation | P0 | Every matching membership is preserved and each unique source-target pair is checked independently of collector order. |
 | 2 | Violation baseline | Valid and worth doing | P1 | Enables incremental adoption more safely than `--max-violations`; depends on stable violation identity. |
 | 3 | Layer cycle detection | Valid as an opt-in rule | P1 | Useful after graph correctness; not every architecture forbids every cycle. |
-| 4 | Parallel dependency analysis | Performance concern valid; action unproven | P2 | Files are parsed at least twice, and more with external-import checks; profiling must justify the redesign. |
-| 5 | Improve name resolution | Valid and critical | P0 | Aliases are missed and duplicate names produce ambiguous dependencies. This requires module-aware identities, not another name heuristic. |
+| 4 | Parallel dependency analysis | Performance concern valid; action unproven | P2 | Collection and resolution parse included files separately; profiling must justify changes. |
+| 5 | Improve name resolution | Core module/import/lexical slice completed | P0 | Module identities, aliases, relative imports, re-exports, and basic shadowing resolve statically; advanced control flow and dynamic types remain pending. |
 | 6 | SARIF report | Resolved | P2 | SARIF 2.1.0 output and GitHub upload recipe; analysis accuracy limitations remain. |
 | 7 | `deply init` | Direction valid; wizard premature | P3 | Recipes are not packaged presets and the agent skill already reduces setup cost. Start with a scriptable preset only after measuring demand. |
 | 8 | Custom rule plugins | Technically valid; defer | P3 | No demonstrated demand and core rule contracts are not stable enough yet. |
@@ -145,16 +155,23 @@ call after nested function: missed
 invalid path before validation preflight: `deply validate` exit 1; `deply analyze` exit 0 with 0 violations
 ```
 
+The module-aware resolver addresses the aliased-import and equal-name cases above.
+Focused regression coverage also exercises relative imports, package re-exports,
+lexical shadowing, source ownership, and the `models.Project.objects.all()` case
+with existing YAML configuration.
+
 Relevant implementation points:
 
 - `deply/main.py`: explicit validation and analysis use the same validation preflight.
 - `deply/deply_runner.py`: incomplete collection fails analysis; layer ownership
   preserves every matching layer and evaluates membership pairs; only collection
   uses the process pool.
-- `deply/code_analyzer.py`: files are read and parsed again, failures are returned
-  to the runner, and the global index is keyed by element name.
+- `deply/code_analyzer.py`: included files are read and parsed again; failures and
+  ambiguous-module diagnostics are returned to the runner.
+- `deply/utils/module_resolver.py`: module identities, import bindings, re-exports,
+  and lexical scopes resolve internal targets without global short-name matching.
 - `deply/utils/dependency_visitor.py`: async and sync functions share recursive
-  scope handling; functions and classes restore their enclosing element.
+  scope handling; definitions and collected assignments own dependency events.
 - `deply/reports/formats/json_report.py`: reports expose violations and additive
   analysis completeness metrics.
 
@@ -167,7 +184,8 @@ Each item should be a separate change with focused regression tests:
 3. ~~Fail on incomplete analysis.~~ Resolved.
 4. ~~Fix async and nested-scope correctness.~~ Resolved.
 5. ~~Define layer ownership and overlap semantics.~~ Resolved.
-6. Build the module-aware, scope-aware resolver.
+6. ~~Build the core module/import/lexical resolver.~~ Completed; advanced
+   control-flow and dynamic resolution remain deferred.
 7. ~~Add completeness metrics.~~ Resolved independently of the resolver.
 8. Add stable violation fingerprints after stable module identities.
 9. Add baseline support.

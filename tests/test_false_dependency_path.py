@@ -173,12 +173,7 @@ class TestFalseDependencyPath(unittest.TestCase):
         # must not be confused with MyService.path
         self.assertEqual(exit_code, 0, f"Expected no violations. Output:\n{output}")
 
-    def test_directory_collector_with_dependent_variable_and_directory_collector(self):
-        """
-        This new test uses DirectoryCollector on 'services' and 'urls' directories
-        to ensure referencing django.urls.path doesn't conflict with a local 'path'
-        field in the service layer.
-        """
+    def test_directory_collector_detects_imported_variable(self):
         services_dir = self.test_project_dir / 'services'
         services_dir.mkdir(exist_ok=True)
         (services_dir / '__init__.py').write_text('')  # optional if needed
@@ -199,7 +194,7 @@ class TestFalseDependencyPath(unittest.TestCase):
         my_urls_file = urls_dir / 'my_urls.py'
         my_urls_file.write_text(
             'from django.urls import path\n'
-            'from services import test_var\n'
+            'from services.my_service import test_var\n'
             'def create_path():\n'
             '    return path("some/url", None)\n'
         )
@@ -237,12 +232,10 @@ class TestFalseDependencyPath(unittest.TestCase):
         }
 
         exit_code, output = self.run_deply(config_data)
-        # We expect no violations, because referencing django.urls.path
-        # must not be confused with MyService.path
-        self.assertEqual(exit_code, 1, f"Expected no violations. Output:\n{output}")
-        self.assertTrue(
-            "test_project/urls_collector/my_urls.py:2:0 - Layer 'urls_layer' is not allowed to depend on layer 'services_layer'. Dependency type: import_from." in output,
-            f"Expected no violations. Output:\n{output}"
+        self.assertEqual(exit_code, 1, f"Expected imported variable violation. Output:\n{output}")
+        self.assertIn(
+            "test_project/urls_collector/my_urls.py:2:0 - Layer 'urls_layer' is not allowed to depend on layer 'services_layer'. Dependency type: import_from.",
+            output,
         )
 
 

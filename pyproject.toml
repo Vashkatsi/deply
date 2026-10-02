@@ -21,10 +21,13 @@ pretty = true
 source_paths = [
     "deply/main.py",
     "deply/config_validator.py",
+    "deply/code_analyzer.py",
     "deply/deply_runner.py",
     "deply/utils/dependency_visitor.py",
+    "deply/utils/module_resolver.py",
     "deply/rules/",
 ]
 also_copy = ["deply/"]
 mutate_only_covered_lines = true
+pytest_add_cli_args = ["--timeout=5"]
 pytest_add_cli_args_test_selection = ["tests"]
