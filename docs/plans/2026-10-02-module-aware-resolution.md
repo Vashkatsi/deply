@@ -35,12 +35,15 @@ Base: `origin/main` at `d33ccc0`.
 ## Verification
 
 - Baseline: 181 tests passed before changes.
-- Added 30 integration regressions covering the issue, import identity, lexical
+- Added 31 integration regressions covering the issue, import identity, lexical
   scopes, package boundaries, re-exports, ambiguity, and existing v1 YAML.
 - Corrected invalid import paths in legacy fixtures while preserving their
   original dependency ownership and violation assertions.
-- `make check` passed: Ruff, mypy, dependency audit, and all 211 tests on Python 3.14.
-- All 211 tests passed on Python 3.8; one Python 3.12+ generic-syntax test skipped.
-- CI coverage gates passed: 96.14% line coverage and 90.61% branch coverage.
+- `make check` passed: Ruff, mypy, dependency audit, and all 212 tests on Python 3.14.
+- All 212 tests passed on Python 3.8; one Python 3.12+ generic-syntax test skipped.
+- CI coverage gates passed: 96.18% line coverage and 90.70% branch coverage.
+- Targeted mutation verification covered 1,115 mutants in the resolver and
+  analyzer: 848 killed, 267 survived, no execution errors or untested mutants.
+  Scores remain report-only; CI runs core and resolver scopes separately.
 - Independent review approved the scoped diff after regression fixes;
   `git diff --check` passed.
