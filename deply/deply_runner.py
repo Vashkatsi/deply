@@ -214,7 +214,9 @@ class DeplyRunner:
         logging.info("Analyzing code and checking dependencies ...")
         analyzer = CodeAnalyzer(
             code_elements=set(self.code_element_to_layers.keys()),
-            dependency_handler=dependency_handler
+            dependency_handler=dependency_handler,
+            analysis_paths=self.paths,
+            files=self.all_files,
         )
         analysis_errors = analyzer.analyze()
         self.analysis_errors.extend(analysis_errors)

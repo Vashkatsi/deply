@@ -239,7 +239,7 @@ class TestExternalImportRunner(unittest.TestCase):
         self.assertEqual(payload["total_violations"], 2)
         self.assertEqual(payload["by_type"]["disallowed_external_import"], 2)
         self.assertEqual(collection_parser.call_count, 2)
-        self.assertEqual(dependency_parser.call_count, 1)
+        self.assertEqual(dependency_parser.call_count, 2)
         self.assertEqual(
             sorted(violation["line"] for violation in payload["violations"]),
             [1, 2],
