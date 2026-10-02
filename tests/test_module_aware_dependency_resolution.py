@@ -119,6 +119,20 @@ class TestModuleAwareDependencyResolution(unittest.TestCase):
             {("models.py", "Project")},
         )
 
+    def test_analyzer_infers_files_and_root_for_existing_direct_callers(self):
+        files = self.write_files({
+            "models.py": "class Project: pass",
+            "views.py": "from models import Project as Model\ndef create():\n    return Model()",
+        })
+        collector = DirectoryCollector({"directories": ["."]}, [str(self.root)], [])
+        elements = {
+            element for file_path in files
+            for element in collector.match_in_file(ast.parse(file_path.read_text()), file_path)
+        }
+        dependencies = []
+        self.assertEqual(CodeAnalyzer(elements, dependencies.append).analyze(), [])
+        self.assertEqual(self.targets(dependencies, "create", "function_call"), {("models.py", "Project")})
+
     def test_multiple_modules_in_one_import_keep_each_direct_target(self):
         dependencies = self.analyze({
             "app/models.py": "class Project: pass",

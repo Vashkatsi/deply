@@ -180,6 +180,14 @@ jobs:
     needs: build
     if: github.event_name == 'pull_request'
     timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - scope: core
+            filters: 'do_not_mutate = ["deply/code_analyzer.py", "deply/utils/module_resolver.py"]'
+          - scope: resolver
+            filters: 'only_mutate = ["deply/code_analyzer.py", "deply/utils/module_resolver.py"]'
 
     steps:
       - uses: actions/checkout@v4
@@ -195,7 +203,10 @@ jobs:
           pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Run mutation tests (report-only)
+        env:
+          MUTATION_FILTER: ${{ matrix.filters }}
         run: |
+          printf '\n%s\n' "$MUTATION_FILTER" >> pyproject.toml
           mutmut run
           mutmut export-cicd-stats
 
@@ -282,7 +293,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mutation-report
+          name: mutation-report-${{ matrix.scope }}
           path: |
             mutants/mutmut-cicd-stats.json
             mutants/mutmut-stats.json

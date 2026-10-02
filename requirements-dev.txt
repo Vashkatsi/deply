@@ -5,3 +5,4 @@ pre-commit
 types-PyYAML
 mutmut
 pytest
+pytest-timeout
