@@ -106,7 +106,13 @@ internal module paths.
 Every completed analysis report includes completeness metrics for discovered,
 excluded, parsed, mapped, and unmapped files; mapped and overlapping elements;
 and detected dependencies. Incomplete analysis prints the available metrics to
-standard error before exiting.
+standard error before exiting. With `--report-format=json`, invalid configuration
+and incomplete analysis also produce a structured error report. JSON schema v1
+includes analysis status, configured rule IDs, source/target identities, layer
+pairs, and stable violation fingerprints for agent integrations. See the
+[JSON contract](doc/cli.md#json-format) for fields and identity guarantees.
+Distinct dependencies and configured rules at the same location are now preserved
+in every report, so totals may increase compared with previously collapsed findings.
 
 ## Agent Skill
 

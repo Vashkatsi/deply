@@ -23,7 +23,8 @@ scanning project files when validation fails. It also exits with status `1`
 when files cannot be read or parsed, no Python files are found, or no code
 elements map to configured layers. Completed reports include analysis
 completeness metrics. Incomplete analysis writes the available metrics to
-standard error and does not generate a report.
+standard error. JSON also generates a report on invalid configuration or
+incomplete analysis; other formats do not generate a report in these cases.
 
 ### Validate Command
 
@@ -117,10 +118,18 @@ files_included: 10
 
 ### JSON Format
 
-The JSON format provides structured data that can be easily parsed by other tools:
+JSON schema v1 preserves the existing `total_violations`, `by_type`,
+`violations`, and optional `metrics` fields and adds machine-readable context:
+
+```bash
+deply analyze --report-format=json --output=deply-report.json
+```
 
 ```json
 {
+  "schema_version": 1,
+  "status": "complete",
+  "errors": [],
   "total_violations": 1,
   "by_type": {
     "disallowed_dependency": 1
@@ -133,7 +142,22 @@ The JSON format provides structured data that can be easily parsed by other tool
       "line": 74,
       "column": 4,
       "message": "Layer 'views' is not allowed to depend on layer 'models'. Dependency type: function_call.",
-      "violation_type": "disallowed_dependency"
+      "violation_type": "disallowed_dependency",
+      "rule_id": "views:disallow_layer_dependencies:bf4644a7ec41e8bcaf3dbdc1d0e47b5ee5bb0183c5c44fa4edcdc02ed31cd252",
+      "source": {
+        "file": "your_project/app1/views_api.py",
+        "name": "list_users",
+        "type": "function"
+      },
+      "target": {
+        "file": "your_project/app2/models.py",
+        "name": "User",
+        "type": "class"
+      },
+      "source_layer": "views",
+      "target_layer": "models",
+      "dependency_type": "function_call",
+      "fingerprint": "122cf66fef3a27215b032b6181347ddb9643c8b43c41d29f9a161531b396e117"
     }
   ],
   "metrics": {
@@ -150,6 +174,76 @@ The JSON format provides structured data that can be easily parsed by other tool
   }
 }
 ```
+
+#### Analysis status and errors
+
+- `schema_version`: integer `1`. Consumers should check it and tolerate unknown
+  additive fields.
+- `status`: `complete`, `incomplete`, or `invalid_configuration`. `complete`
+  means the supported analysis passes finished; it does not mean no violations
+  or complete understanding of dynamic Python behavior.
+- `errors`: an array of `{ "code": string, "message": string }`. Codes are
+  `incomplete_analysis` or `invalid_configuration`; messages are diagnostics,
+  not identifiers to parse. A complete report has an empty array.
+- `metrics`: existing counters, including partial counters for incomplete
+  analysis. Invalid configuration has no metrics because scanning never started.
+
+All three statuses produce JSON on stdout or overwrite `--output`. Errors still
+print to stderr. Invalid configuration and incomplete analysis exit `1`, even
+with a permissive `--max-violations`. Complete analysis retains the existing
+threshold exit behavior. Partial violations in an incomplete report are not
+an exhaustive result. With JSON and `--mermaid`, the diagram goes to stderr,
+keeping stdout parseable. `deply validate` retains its text-only behavior.
+
+Deduplication now preserves different source/target relationships and configured
+rules even when their location and message match. This applies to every report
+format: counts may increase for previously collapsed violations. Re-evaluate
+existing `--max-violations` thresholds against the corrected totals.
+
+#### Violation identity
+
+- Legacy `file`, `element_name`, `element_type`, `line`, `column`, `message`,
+  and `violation_type` fields retain their meanings. Columns are zero-based
+  UTF-8 byte offsets from Python AST, not character offsets.
+- `source` and internal `target` contain `file`, `name`, and `type`. Names
+  preserve collected qualified names, including enclosing scopes where available.
+  Paths use forward slashes and are relative to the configuration directory;
+  files outside it use `../` segments. On Windows, files on a different drive
+  use absolute `file:` URIs, whose fingerprints depend on that drive/path.
+  Run with a configuration in the same relative location across checkouts to
+  retain identity.
+- `source_layer` and `target_layer` identify the particular checked membership
+  pair. Overlapping memberships remain separate violations.
+- `dependency_type` identifies an internal dependency, such as `function_call`.
+  Element checks have a null `target`, `target_layer`, and `dependency_type`.
+- External import checks identify the source as the file's `<module>` with type
+  `module`; the target is `{ "module": "requests.sessions", "type":
+  "external_module" }`. Their `target_layer` and `dependency_type` are null.
+  The legacy element fields still identify the collected representative element.
+- `rule_id` is `layer:configuration_key:sha256`, where the digest covers compact,
+  sorted-key, ASCII-escaped JSON of the effective configured rule (type, supported
+  parameters, and defaults).
+  Ignored metadata does not affect identity. Dependency target lists and external
+  import roots are normalized as sorted sets; other rule configurations retain
+  list order. Identical configured constraints share an ID. Changed constraints
+  change the ID. Bool rules identify the full configured expression, including
+  when a subrule produces the diagnostic.
+- `fingerprint` is the SHA-256 of compact, sorted-key, ASCII-escaped JSON containing `rule_id`,
+  `source`, `target`, `source_layer`, `target_layer`, and `dependency_type`.
+  JSON uses `separators=(",", ":")` and UTF-8 encoding for both digests.
+  It excludes locations and messages; same-drive paths exclude the absolute
+  checkout root. Different call sites for the same relationship share a fingerprint but keep separate locations.
+  Renaming or moving a symbol/file, changing a rule, or changing a membership pair
+  changes the fingerprint. It is not an occurrence ID or proof of semantic equivalence.
+
+Direct `JsonReport`/`ReportGenerator` callers default the identity root to the
+working directory; pass `root=Path(...)` for a different root. Manually constructed
+violations without configured context use `violation_type` as their `rule_id`
+and null layers; use the analysis CLI for full configured identities.
+
+Fingerprints prepare exact baseline support; this release does not add baseline
+suppression. Existing wildcard-import, dynamic-type, and control-flow limitations
+remain. A complete report is not a complete call graph.
 
 File metrics count unique Python paths. `files_parsed` means the collection
 pass parsed the file successfully. `files_mapped` and `files_unmapped`
