@@ -44,4 +44,5 @@ class ExternalImportRule(BaseRule):
                 f"'{import_root}'. Import: {module_name}."
             ),
             violation_type=self.VIOLATION_TYPE,
+            external_import=module_name,
         )

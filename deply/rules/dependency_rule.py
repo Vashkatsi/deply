@@ -30,4 +30,6 @@ class DependencyRule(BaseRule):
             message=message,
             violation_type=self.VIOLATION_TYPE,
             dependency=dependency,
+            source_layer=source_layer,
+            target_layer=target_layer,
         )
