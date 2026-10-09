@@ -6,6 +6,7 @@ from ..models.code_element import CodeElement
 
 class BaseRule:
     checks_external_imports = False
+    rule_id: Optional[str] = None
 
     def check(
             self,

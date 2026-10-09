@@ -69,8 +69,11 @@ assessment reflects the codebase on 2026-10-02.
    discovered, excluded, included, parsed, mapped, and unmapped files; mapped and
    overlapping elements; and raw detected dependencies. Incomplete analysis emits
    the available metrics with its errors. These counters reuse existing analysis
-   passes. Unresolved references and stable violation fingerprints remain pending
-   until their resolution semantics and public violation identities are defined.
+   passes. Unresolved-reference counters remain pending until their resolution semantics
+   are defined. JSON schema v1 now includes explicit status/errors, configured
+   rule identities, source/target context, and location-independent relationship
+   fingerprints. JSON error reports also cover configuration preflight failures.
+   See the [JSON contract](cli.md#json-format).
 
 ### P1: improve adoption after correctness
 
@@ -81,7 +84,8 @@ assessment reflects the codebase on 2026-10-02.
    diagnostic, not the primary fingerprint, because unrelated line movement must
    not invalidate the baseline. Suppress only existing fingerprints and fail on new
    ones. Implement this after violation identities and dependency resolution are
-   stable to avoid baseline churn.
+   stable to avoid baseline churn. JSON relationship fingerprints are now available;
+   repeated locations share an identity. Baseline suppression remains pending.
 
 8. **Add opt-in cycle detection.** Strongly connected components after projecting
    resolved dependencies onto the layer graph are useful, but a cycle is not
@@ -187,7 +191,7 @@ Each item should be a separate change with focused regression tests:
 6. ~~Build the core module/import/lexical resolver.~~ Completed; advanced
    control-flow and dynamic resolution remain deferred.
 7. ~~Add completeness metrics.~~ Resolved independently of the resolver.
-8. Add stable violation fingerprints after stable module identities.
+8. ~~Add stable violation fingerprints after stable module identities.~~ Resolved for JSON relationship identities.
 9. Add baseline support.
 10. Add the opt-in cycle rule.
 11. ~~Add SARIF output.~~ Resolved independently of the resolver.

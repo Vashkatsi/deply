@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import sys
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -207,7 +208,8 @@ class DeplyRunner:
                     for rule in self.rules:
                         violation = rule.check(source_layer, target_layer, dependency)
                         if violation and not self.is_violation_suppressed(violation):
-                            self.violations.add(violation)
+                            self.violations.add(replace(violation, rule_id=rule.rule_id, source_layer=source_layer,
+                                                        target_layer=target_layer))
                             has_violation = True
                     self.mermaid_builder.add_edge(source_layer, target_layer, has_violation)
 
@@ -233,7 +235,7 @@ class DeplyRunner:
                 for rule in self.rules:
                     violation_candidate = rule.check_element(layer_name, element)
                     if violation_candidate and not self.is_violation_suppressed(violation_candidate):
-                        self.violations.add(violation_candidate)
+                        self.violations.add(replace(violation_candidate, rule_id=rule.rule_id, source_layer=layer_name))
 
     def run_external_import_checks(self):
         external_import_rules = [
@@ -270,11 +272,16 @@ class DeplyRunner:
                         column,
                     )
                     if violation_candidate and not self.is_violation_suppressed(violation_candidate):
-                        self.violations.add(violation_candidate)
+                        self.violations.add(replace(violation_candidate, rule_id=rule.rule_id, source_layer=layer_name))
 
     def generate_report(self):
         logging.info("Generating report...")
-        return ReportGenerator(list(self.violations), self.metrics).generate(self.args.report_format)
+        return ReportGenerator(
+            list(self.violations), self.metrics,
+            root=Path(self.args.config).resolve().parent,
+            status="incomplete" if self.analysis_errors else "complete",
+            errors=[{"code": "incomplete_analysis", "message": error} for error in sorted(self.analysis_errors)],
+        ).generate(self.args.report_format)
 
     def output_report(self, report):
         if self.args.output:
@@ -286,13 +293,16 @@ class DeplyRunner:
             print(report)
         if self.args.mermaid:
             mermaid_diagram = self.mermaid_builder.build_diagram()
-            print("\n[Mermaid Diagram of Layer Dependencies]\n")
-            print(mermaid_diagram)
+            diagram_stream = sys.stderr if self.args.report_format == "json" else sys.stdout
+            print("\n[Mermaid Diagram of Layer Dependencies]\n", file=diagram_stream)
+            print(mermaid_diagram, file=diagram_stream)
 
     def is_analysis_complete(self) -> bool:
         if not self.analysis_errors:
             return True
 
+        if self.args.report_format == "json":
+            self.output_report(self.generate_report())
         print("Incomplete analysis:", file=sys.stderr)
         for analysis_error in sorted(self.analysis_errors):
             print(f"- {analysis_error}", file=sys.stderr)

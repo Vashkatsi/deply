@@ -2,15 +2,20 @@ import argparse
 import logging
 import sys
 from pathlib import Path
+from typing import Optional
 
 import yaml
 from deply import __version__
 from deply.config_parser import ConfigParser
 from deply.config_validator import ConfigValidator
 from deply.deply_runner import DeplyRunner
+from deply.reports.report_generator import ReportGenerator
 
 
-def validate_configuration(config_path: str, report_success: bool = True) -> bool:
+def validate_configuration(
+        config_path: str, report_success: bool = True,
+        report_format: str = "text", output: Optional[str] = None,
+) -> bool:
     configuration_path = Path(config_path)
     try:
         config = ConfigParser(configuration_path).parse()
@@ -23,6 +28,15 @@ def validate_configuration(config_path: str, report_success: bool = True) -> boo
             print(f"Configuration is valid: {configuration_path}")
         return True
 
+    if report_format == "json":
+        report = ReportGenerator(
+            [], status="invalid_configuration",
+            errors=[{"code": "invalid_configuration", "message": error} for error in errors],
+        ).generate("json")
+        if output:
+            Path(output).write_text(report)
+        else:
+            print(report)
     print("Invalid deply configuration:", file=sys.stderr)
     for error in errors:
         print(f"- {error}", file=sys.stderr)
@@ -92,7 +106,8 @@ def main():
     if args.command == "validate":
         sys.exit(0 if validate_configuration(args.config) else 1)
 
-    if not validate_configuration(args.config, report_success=False):
+    if not validate_configuration(args.config, report_success=False,
+                                  report_format=args.report_format, output=args.output):
         sys.exit(1)
 
     logging.getLogger(__name__).info("Starting Deply analysis...")  # pragma: no mutate

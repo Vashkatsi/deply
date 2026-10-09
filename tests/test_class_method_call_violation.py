@@ -1,3 +1,4 @@
+import json
 import shutil
 import sys
 import tempfile
@@ -5,6 +6,7 @@ import unittest
 from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 import yaml
 
@@ -125,7 +127,19 @@ class TestClassMethodCallViolation(unittest.TestCase):
         self.assertEqual(exit_code, 1)
         # Check that the output contains the expected violation message
         self.assertIn("Layer 'views' is not allowed to depend on layer 'models'", output)
-        self.assertIn("Total Violations               17", output)
+        self.assertIn("Total Violations               28", output)
+        with captured_output() as (out, err), patch.object(sys, "argv", [
+            "deply", "analyze", "--config", str(self.config_yaml), "--report-format", "json",
+        ]):
+            with self.assertRaises(SystemExit):
+                main()
+        payload = json.loads(out.getvalue())
+        calls = [record for record in payload["violations"]
+                 if record["line"] == 5 and record["dependency_type"] == "function_call"]
+        self.assertEqual({(record["source"]["name"], record["target"]["name"]) for record in calls}, {
+            ("my_view", "MyModel"), ("my_view", "MyModel.get"),
+        })
+        self.assertEqual(len({record["fingerprint"] for record in calls}), 2)
 
 
 if __name__ == '__main__':

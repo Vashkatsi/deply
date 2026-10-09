@@ -17,3 +17,6 @@
 - Use the project virtualenv for YAML checks; resolve schema download paths from the upstream tree.
 - Python module attributes require initializer bindings or loaded submodules; from-import fallback must respect regular-package directories.
 - Set a pytest timeout below mutmut's process deadline so infinite-loop mutants fail tests instead of becoming mutation execution errors.
+- Violation deduplication must include source/target and configured rule context; location/message equality loses distinct edges and hides their impact on threshold counts.
+- Hash effective rule parameters, not raw YAML mappings: ignored metadata may contain non-JSON values such as dates and must not change rule identity.
+- Use isolated environments for compatibility checks; `uv run --python` can recreate the shared project `.venv`.

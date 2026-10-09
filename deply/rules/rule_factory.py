@@ -1,3 +1,6 @@
+import hashlib
+import json
+
 from typing import Dict, Any, List, Optional
 from .base_rule import BaseRule
 from .dependency_rule import DependencyRule
@@ -26,11 +29,18 @@ class RuleFactory:
         for layer_name, layer_rules in ruleset.items():
             disallowed = layer_rules.get("disallow_layer_dependencies")
             if disallowed:
-                rules.append(DependencyRule(layer_name, disallowed))
+                rules.append(RuleFactory._identify_rule(
+                    DependencyRule(layer_name, disallowed), layer_name,
+                    "disallow_layer_dependencies", sorted(set(disallowed)),
+                ))
 
             disallowed_external_imports = layer_rules.get("disallow_external_imports")
             if disallowed_external_imports:
-                rules.append(ExternalImportRule(layer_name, disallowed_external_imports))
+                rules.append(RuleFactory._identify_rule(
+                    ExternalImportRule(layer_name, disallowed_external_imports), layer_name,
+                    "disallow_external_imports",
+                    sorted({name.split(".")[0] for name in disallowed_external_imports}),
+                ))
 
             rules.extend(
                 RuleFactory._collect_rules_for_key(layer_name, layer_rules, "enforce_class_naming")
@@ -59,8 +69,34 @@ class RuleFactory:
         for rule_config in configs:
             rule = RuleFactory._create_rule_from_config(layer_name, rule_config)
             if rule is not None:
-                collected.append(rule)
+                collected.append(RuleFactory._identify_rule(rule, layer_name, key, RuleFactory._effective_rule_config(rule_config)))
         return collected
+
+    @staticmethod
+    def _effective_rule_config(config: Dict[str, Any]) -> Dict[str, Any]:
+        rule_type = config.get("type", "")
+        if rule_type == "bool":
+            return dict(type=rule_type, **{
+                key: [RuleFactory._effective_rule_config(rule) for rule in config.get(key, [])]
+                for key in ("must", "any_of", "must_not")
+            })
+        parameter = {
+            "class_name_regex": "class_name_regex",
+            "function_name_regex": "function_name_regex",
+            "class_decorator_name_regex": "decorator_name_regex",
+            "function_decorator_name_regex": "decorator_name_regex",
+            "class_inherits": "base_class",
+        }.get(rule_type)
+        if parameter is None:
+            return {"type": rule_type}
+        return {"type": rule_type, parameter: config.get(parameter, "")}
+
+    @staticmethod
+    def _identify_rule(rule: BaseRule, layer_name: str, key: str, config: Any) -> BaseRule:
+        configuration = json.dumps(config, sort_keys=True, separators=(",", ":"))
+        digest = hashlib.sha256(configuration.encode("utf-8")).hexdigest()
+        rule.rule_id = f"{layer_name}:{key}:{digest}"
+        return rule
 
     @staticmethod
     def _create_rule_from_config(layer_name: str, rule_config: Dict[str, Any]) -> Optional[BaseRule]:
