@@ -8,6 +8,8 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from deply.baseline import compare_baseline, load_baseline, write_baseline
+from deply.models.violation_identity import ViolationSerializer
 from deply.code_analyzer import CodeAnalyzer
 from deply.collectors.collector_factory import CollectorFactory
 from deply.config_parser import ConfigParser
@@ -52,6 +54,7 @@ class DeplyRunner:
         self.workers_count = 1
         self.ignore_maps = {}
         self.analysis_errors: List[str] = []
+        self.baseline: Optional[Dict[str, List[Dict[str, Any]]]] = None
 
     def _get_workers_count(self) -> int:
         if self.args.parallel is None:
@@ -276,8 +279,14 @@ class DeplyRunner:
 
     def generate_report(self):
         logging.info("Generating report...")
+        violations = list(self.violations)
+        if self.baseline is not None and self.args.report_format != "json":
+            serializer = ViolationSerializer(Path(self.args.config).resolve().parent)
+            new_fingerprints = {record["fingerprint"] for record in self.baseline["new"]}
+            violations = [item for item in violations if serializer.serialize(item)["fingerprint"] in new_fingerprints]
         return ReportGenerator(
-            list(self.violations), self.metrics,
+            violations, self.metrics,
+            baseline=self.baseline,
             root=Path(self.args.config).resolve().parent,
             status="incomplete" if self.analysis_errors else "complete",
             errors=[{"code": "incomplete_analysis", "message": error} for error in sorted(self.analysis_errors)],
@@ -336,10 +345,31 @@ class DeplyRunner:
         if not self.is_analysis_complete():
             return False
 
+        baseline_path = getattr(self.args, "baseline", None)
+        write_path = getattr(self.args, "write_baseline", None)
+        if baseline_path or write_path:
+            serializer = ViolationSerializer(Path(self.args.config).resolve().parent)
+            records = [serializer.serialize(item) for item in ReportGenerator(list(self.violations)).violations]
+            try:
+                if baseline_path:
+                    self.baseline = compare_baseline(records, load_baseline(Path(baseline_path)))
+                elif write_path:
+                    write_baseline(Path(write_path), records)
+            except (OSError, ValueError) as exception:
+                if self.args.report_format == "json":
+                    self.output_report(ReportGenerator(
+                        list(self.violations), self.metrics, root=Path(self.args.config).resolve().parent,
+                        status="incomplete", errors=[{"code": "baseline_error", "message": str(exception)}],
+                    ).generate("json"))
+                print(f"Baseline error: {exception}", file=sys.stderr)
+                return False
+
         report = self.generate_report()
         self.output_report(report)
 
-        return len(self.violations) <= self.args.max_violations
+        if self.baseline is not None:
+            return not self.baseline["new"]
+        return bool(write_path) or len(self.violations) <= self.args.max_violations
 
 
 def extract_absolute_imports(
