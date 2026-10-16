@@ -114,6 +114,22 @@ pairs, and stable violation fingerprints for agent integrations. See the
 Distinct dependencies and configured rules at the same location are now preserved
 in every report, so totals may increase compared with previously collapsed findings.
 
+## Violation Baseline
+
+Accept reviewed architecture debt once and fail only on new relationships:
+
+```bash
+deply analyze --write-baseline=deply-baseline.json
+deply analyze --baseline=deply-baseline.json --report-format=json
+```
+
+Creation requires complete analysis and never overwrites a file. Comparison adds
+`new`, `existing`, and `resolved` categories to JSON and fails on new violations or
+errors. Other formats show only new findings. Fingerprints identify relationships,
+so additional call sites for accepted relationships are also accepted.
+See [baseline semantics and safe refresh](doc/cli.md#violation-baseline).
+These options are available in this source tree, not published v1.2.1.
+
 ## Agent Skill
 
 Deply v1.2.1 includes a portable Agent Skill at `skills/deply-config/` for Codex, Claude Code, and other Agent Skills-compatible assistants. It helps an assistant inspect a Python project, generate `deply.yaml` using `light`, `medium`, or `strict` guidance, validate it with `deply validate`, run analysis, and add Makefile/CI/docs integration. These profiles belong to the Agent Skill; they are not built-in Deply CLI presets.

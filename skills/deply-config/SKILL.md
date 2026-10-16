@@ -21,7 +21,7 @@ Use this skill to create or audit a production-ready `deply.yaml` for a Python p
 2. Ask only for intent that cannot be discovered:
    - Preserve current architecture or enforce a target architecture.
    - Strictness: `light`, `medium`, or `strict`.
-   - CI rollout: fail immediately or adopt with a temporary `--max-violations=N` ratchet.
+   - CI rollout: fail immediately or explicitly accept reviewed debt in a baseline; check CLI support first.
 3. Read the needed references:
    - `references/discovery.md` first for deterministic repository inspection before asking questions.
    - `references/deply-v1-schema.md` for exact Deply v1.2.1 YAML, collectors, rules, and validation constraints.
@@ -37,7 +37,7 @@ Use this skill to create or audit a production-ready `deply.yaml` for a Python p
    - Audit mode: review existing config, CI, docs, and suppressions before proposing changes.
 5. Run `deply validate --config=deply.yaml` from the project root.
 6. Run `deply analyze --parallel --config=deply.yaml` from the project root.
-7. If violations exist, triage them before editing. Fix collectors/excludes first. Only use `--max-violations=N` when the user chooses non-blocking adoption.
+7. If violations exist, triage them before editing. Fix incorrect collectors/excludes first, without weakening intended boundaries. For accepted legacy debt, follow `references/adoption-and-audit.md`: check `deply analyze --help`, create a baseline explicitly, then compare before and after code changes. Never refresh the baseline to hide new violations. Published v1.2.1 lacks baseline options; use its numeric threshold only when the user explicitly accepts that weaker check.
 8. Add local command, CI step, and short architecture docs when requested.
 9. Finish with the output contract below.
 
@@ -60,7 +60,7 @@ End every run with:
 - Strictness: `light`, `medium`, `strict`, or `not changed`.
 - Validation command and result.
 - Analyze command and result.
-- Current violation count.
+- Current violation count; with baseline, counts of `new`, `existing`, and `resolved` diagnostics.
 - Existing suppression count and any new suppressions added.
-- CI behavior: blocking, non-blocking, ratchet with exact `--max-violations=N`, or not changed.
+- CI behavior: blocking, baseline with its path, legacy numeric threshold, or not changed. Include baseline creation/changes explicitly.
 - Follow-up work, only if required to finish adoption safely.
