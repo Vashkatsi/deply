@@ -51,6 +51,8 @@ deply --help
 - `--output`: Output file for the report (if not specified, prints to console)
 - `--mermaid`: Generates a Mermaid diagram of layer dependencies
 - `--max-violations`: Maximum number of allowed violations before failing (default: 0)
+- `--baseline`: Compare against an accepted violation baseline
+- `--write-baseline`: Create a new baseline after complete analysis (never overwrite)
 - `--parallel`: Enable parallel processing of code elements
 
 ### Validate Command Options
@@ -100,6 +102,63 @@ deply analyze --max-violations=5
 ```bash
 deply analyze --parallel
 ```
+
+## Violation baseline
+
+Baseline support is available in this source tree; it is not part of the published
+v1.2.1 CLI. Check `deply analyze --help` before using these options, and pin a
+baseline-capable build in CI.
+
+Explicitly accept reviewed existing debt, then check subsequent changes:
+
+```bash
+# Run from the project root; creates a new file, never overwrites one.
+deply analyze --config=deply.yaml --write-baseline=deply-baseline.json
+
+# Use this in local checks and CI.
+deply analyze --config=deply.yaml --baseline=deply-baseline.json --report-format=json
+```
+
+- Creation requires complete analysis and returns exit `0` even when violations
+  exist. A missing parent directory, existing destination (including symlinks), or
+  write failure returns `1`. Publication is atomic and requires filesystem hard-link
+  support. Commit the baseline only after reviewing the accepted findings.
+- Comparison returns `1` for any new relationship, missing/invalid baseline, invalid
+  configuration, or incomplete analysis; otherwise `0`. It never updates the baseline.
+- `--baseline` and `--write-baseline` are mutually exclusive. A nonzero
+  `--max-violations` cannot be combined with either option. Argument conflicts return
+  `2`. Creation cannot be combined with `--output`; its analysis report goes to
+  stdout. During comparison, `--output` must not alias the baseline or configuration file.
+- JSON keeps `schema_version: 1`, all current `violations`, `total_violations`, and
+  metrics. Successful comparison adds `baseline: {"new": [...], "existing": [...],
+  "resolved": [...]}`. Entries are full violation records. New/existing use current
+  locations; resolved uses stored locations. Counts are array lengths, counting
+  diagnostic occurrences, not unique relationships.
+- Text, GitHub Actions, and SARIF comparison reports contain only new violations.
+  Metrics and Mermaid still describe the full analyzed project; Mermaid marks all
+  detected violations, including accepted ones.
+- Baseline I/O/validation failures in JSON produce `status: "incomplete"` and an
+  error with `code: "baseline_error"`. No comparison categories are emitted on
+  failure. Configuration and analysis errors retain their existing status/error codes.
+- The baseline file has exactly `schema_version: 1` and `violations: [...]`, using
+  JSON v1 diagnostic records with verified fingerprints. It is distinct from an
+  analysis report. Unsupported versions, malformed records, duplicate JSON keys,
+  and identity/fingerprint mismatches are rejected.
+
+Identity paths are relative to the configuration directory, so preserve its
+relationship to source files across checkouts. Moving lines or changing messages
+preserves fingerprints. Changing files, symbols, rule parameters, or layer pairs
+can produce new findings. Multiple call sites for an already accepted relationship
+remain accepted; baseline does not detect additional occurrences of that relationship.
+
+`resolved` means absent from the current configured analysis. It can result from a
+fix, changed scope/rules, or inline suppression. Review those changes; baseline does
+not prove that debt was fixed. Removed fingerprints remain accepted until the file
+is deliberately refreshed, so a reintroduced relationship stays accepted meanwhile.
+
+To refresh after reviewed fixes, create a **different** candidate baseline file,
+review the diff, and explicitly replace the tracked file. Never regenerate it in CI
+or let an agent refresh it merely to pass a failing check.
 
 ## Output Formats
 
@@ -183,7 +242,7 @@ deply analyze --report-format=json --output=deply-report.json
   means the supported analysis passes finished; it does not mean no violations
   or complete understanding of dynamic Python behavior.
 - `errors`: an array of `{ "code": string, "message": string }`. Codes are
-  `incomplete_analysis` or `invalid_configuration`; messages are diagnostics,
+  `incomplete_analysis`, `invalid_configuration`, or `baseline_error`; messages are diagnostics,
   not identifiers to parse. A complete report has an empty array.
 - `metrics`: existing counters, including partial counters for incomplete
   analysis. Invalid configuration has no metrics because scanning never started.
@@ -241,8 +300,8 @@ working directory; pass `root=Path(...)` for a different root. Manually construc
 violations without configured context use `violation_type` as their `rule_id`
 and null layers; use the analysis CLI for full configured identities.
 
-Fingerprints prepare exact baseline support; this release does not add baseline
-suppression. Existing wildcard-import, dynamic-type, and control-flow limitations
+Fingerprints are shared by JSON reporting and baseline comparison. Existing
+wildcard-import, dynamic-type, and control-flow limitations
 remain. A complete report is not a complete call graph.
 
 File metrics count unique Python paths. `files_parsed` means the collection
@@ -293,8 +352,8 @@ private repositories also need `actions: read` and `contents: read`.
 The upload runs even when findings fail the analysis step; the job retains
 that failure. Removing the previous file prevents stale uploads after an
 incomplete analysis. See [GitHub's upload documentation](https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/integrate-with-existing-tools/upload-sarif-file)
-for repository availability and permissions. Deply does not emit baseline
-fingerprints; the upload action can derive fingerprints from checked-out source.
+for repository availability and permissions. Deply does not emit SARIF
+`partialFingerprints`; the upload action can derive fingerprints from checked-out source.
 
 For more information about:
 - Mermaid diagrams, see the [Mermaid Diagrams](mermaid.html) documentation

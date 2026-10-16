@@ -36,6 +36,27 @@ poetry run deply validate --config=deply.yaml
 poetry run deply analyze --parallel --config=deply.yaml
 ```
 
+## Baseline-Capable Builds
+
+The v1.2.1 install examples below do not support baseline. Check `deply analyze --help`
+and pin a build containing this feature before adding a baseline check. Create and
+review the baseline once outside CI, following `adoption-and-audit.md`.
+
+```make
+architecture-check:
+	deply validate --config=deply.yaml
+	deply analyze --config=deply.yaml --baseline=deply-baseline.json
+```
+
+```yaml
+- name: Check architecture against accepted debt
+  run: deply analyze --config=deply.yaml --baseline=deply-baseline.json --report-format=github-actions
+```
+
+CI must never invoke `--write-baseline`. New relationships and incomplete analysis
+fail; accepted relationships do not. For agent feedback use `--report-format=json`
+and inspect `baseline.new`, `baseline.existing`, and `baseline.resolved`.
+
 ## Makefile
 
 Add a target that validates the config and runs analysis:
@@ -48,7 +69,7 @@ architecture-check:
 	deply analyze --parallel --config=deply.yaml
 ```
 
-For legacy adoption with accepted current debt:
+For legacy adoption on published v1.2.1 (weaker numeric fallback):
 
 ```make
 architecture-check:
@@ -88,7 +109,7 @@ Use an exact numeric value in CI, not an untracked environment default.
   run: uvx --from "deply==1.2.1" deply analyze --parallel --report-format=github-actions --config=deply.yaml
 ```
 
-Legacy ratchet:
+Older-CLI numeric fallback:
 
 ```yaml
 - name: Check architecture

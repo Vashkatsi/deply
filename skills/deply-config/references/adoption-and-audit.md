@@ -41,24 +41,44 @@ Rules:
 
 - Count existing suppressions and report them.
 - Do not add suppressions to make a new config pass.
-- Prefer collector fixes, excludes for non-source files, or a temporary ratchet.
+- Prefer collector fixes, excludes for non-source files, or an explicitly reviewed baseline.
 - Add a suppression only when the user accepts a specific exception that cannot be modeled cleanly in `deply.yaml`.
 - Document why new suppressions are acceptable in the final response or project docs.
 
-## Debt Adoption
+## Debt Adoption and Agent Changes
 
-Use this flow for legacy projects:
+Baseline options are implemented in the source tree, not published v1.2.1. Inspect
+`deply analyze --help`; use a pinned baseline-capable build before following this flow.
 
-1. Generate the target config.
-2. Run `deply validate --config=deply.yaml`.
-3. Run `deply analyze --parallel --config=deply.yaml`.
-4. If violations are real and accepted temporarily, rerun with exact current count:
+1. Validate the target config and inspect a complete analysis report.
+2. If the user accepts existing debt, explicitly create a new baseline:
 
 ```bash
-deply analyze --parallel --config=deply.yaml --max-violations=12
+deply analyze --config=deply.yaml --write-baseline=deply-baseline.json
 ```
 
-5. Put the same exact count in CI.
-6. Document that the number must only decrease.
+3. Review and track the file. Creation accepts current violations and returns zero;
+   it refuses existing destinations and incomplete analyses.
+4. Before editing code, run and inspect the comparison:
 
-Do not choose the ratchet count by guessing. Use the actual current violation count from Deply output.
+```bash
+deply analyze --config=deply.yaml --baseline=deply-baseline.json --report-format=json
+```
+
+5. After editing, run the same command. Require `status: complete`, no errors, no
+   `baseline.new`, and exit zero. Fix new violations within the authorized scope;
+   report pre-existing unaccepted findings separately.
+6. Report `new`, `existing`, and `resolved` counts. Do not treat disappearance after
+   changed rules, excludes, or suppressions as proof of a code fix.
+
+Never create or refresh baseline in CI. Never modify baseline, weaken rules, or add
+ignores to make an agent's change pass. Refresh only when explicitly authorized:
+write a separate candidate, review its diff, then replace the tracked file.
+Resolved relationships remain accepted until that refresh; reintroducing one before
+refresh remains accepted. Additional occurrences of accepted relationships are also
+accepted. Line movement preserves identity; symbol/file/rule/layer changes may not.
+Keep the configuration directory at the same relative position to source files.
+
+For older CLIs, an explicitly accepted `--max-violations=N` threshold remains a
+fallback. Set it to the measured count and only decrease it. Explain that fixing
+one violation can mask adding another; it is not equivalent to baseline comparison.

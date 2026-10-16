@@ -68,6 +68,10 @@ def main():
         help="Maximum number of allowed violations before failing"
     )
 
+    baseline_options = parser_analyze.add_mutually_exclusive_group()
+    baseline_options.add_argument("--baseline", type=Path, help="Compare against an accepted violation baseline")
+    baseline_options.add_argument("--write-baseline", type=Path, help="Create a new baseline after complete analysis")
+
     parser_analyze.add_argument(
         '--parallel',
         type=int,
@@ -105,6 +109,19 @@ def main():
 
     if args.command == "validate":
         sys.exit(0 if validate_configuration(args.config) else 1)
+
+    if args.baseline or args.write_baseline:
+        if args.write_baseline and args.output:
+            parser.error("--output cannot be combined with --write-baseline")
+        if args.max_violations != 0:
+            parser.error("baseline options cannot be combined with nonzero --max-violations")
+        protected_paths = [Path(args.config), Path(args.baseline or args.write_baseline)]
+        if args.output and any(
+            Path(args.output).resolve() == path.resolve()
+            or (Path(args.output).exists() and path.exists() and Path(args.output).samefile(path))
+            for path in protected_paths
+        ):
+            parser.error("--output must differ from the configuration and baseline paths")
 
     if not validate_configuration(args.config, report_success=False,
                                   report_format=args.report_format, output=args.output):

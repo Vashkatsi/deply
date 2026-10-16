@@ -72,7 +72,13 @@ For GitHub Actions, prefer:
 deply analyze --parallel --report-format=github-actions --config=deply.yaml
 ```
 
-If adopting Deply in a legacy project with existing violations, use an explicit temporary ratchet only after recording the current violation count:
+For a baseline-capable build, explicitly accept reviewed debt with `--write-baseline`
+and compare before and after agent changes with `--baseline` and JSON output. The
+agent must fix or report `baseline.new` and must never regenerate baseline to pass.
+See [baseline workflow and limitations](cli.md#violation-baseline).
+
+Published v1.2.1 does not support baseline. Its weaker numeric fallback requires
+explicit acceptance after recording the current violation count:
 
 ```bash
 deply analyze --parallel --config=deply.yaml --max-violations=12

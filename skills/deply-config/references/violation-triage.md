@@ -17,7 +17,7 @@ Use this after `deply analyze` reports violations.
 2. Add missing layers for real source boundaries.
 3. Adjust rules to match the selected strictness and architecture recipe.
 4. Recommend code changes only when the user explicitly asked to refactor code.
-5. Use `--max-violations=N` last, with exact current count.
+5. For explicitly accepted legacy debt, use a reviewed baseline on a supporting CLI; see `adoption-and-audit.md`. Use a numeric threshold only as an explicitly accepted older-CLI fallback.
 
 Do not add `deply:ignore` comments to make analysis pass. Use suppressions only for reviewed exceptions that cannot be expressed cleanly in config.
 

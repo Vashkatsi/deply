@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from .formats.github_actions_report import GitHubActionsReport
 from .formats.json_report import JsonReport
@@ -17,6 +17,7 @@ class ReportGenerator:
             root: Optional[Path] = None,
             status: str = "complete",
             errors: Optional[List[Dict[str, str]]] = None,
+            baseline: Optional[Dict[str, List[Dict[str, Any]]]] = None,
     ):
         self.violations = sorted(
             violations,
@@ -42,13 +43,15 @@ class ReportGenerator:
         self.root = root
         self.status = status
         self.errors = errors
+        self.baseline = baseline
 
     def generate(self, format: str) -> str:
         reporter: Union[TextReport, JsonReport, GitHubActionsReport, SarifReport]
         if format == "text":
             reporter = TextReport(self.violations, self.metrics)
         elif format == "json":
-            reporter = JsonReport(self.violations, self.metrics, root=self.root, status=self.status, errors=self.errors)
+            reporter = JsonReport(self.violations, self.metrics, root=self.root, status=self.status,
+                                  errors=self.errors, baseline=self.baseline)
         elif format == 'github-actions':
             reporter = GitHubActionsReport(self.violations, self.metrics)
         elif format == "sarif":

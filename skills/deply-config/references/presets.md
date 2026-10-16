@@ -127,7 +127,7 @@ Pattern:
 
 Strict adoption in legacy repos:
 - Do not weaken the rules silently.
-- If current violations are accepted temporarily, set `--max-violations=N` to the exact current count and document that it must only decrease.
+- For accepted current violations, prefer a reviewed baseline on a supporting CLI; follow `adoption-and-audit.md`. Older versions may use an explicitly accepted numeric threshold, which cannot prevent replacing one violation with another.
 
 Example CI command:
 

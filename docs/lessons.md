@@ -20,3 +20,5 @@
 - Violation deduplication must include source/target and configured rule context; location/message equality loses distinct edges and hides their impact on threshold counts.
 - Hash effective rule parameters, not raw YAML mappings: ignored metadata may contain non-JSON values such as dates and must not change rule identity.
 - Use isolated environments for compatibility checks; `uv run --python` can recreate the shared project `.venv`.
+- Freeze versioned fingerprint encoding with a golden digest test; comparing two generated hashes cannot detect a shared serialization change that invalidates stored baselines.
+- Pre-creation path equality cannot detect case aliases on case-insensitive filesystems; avoid simultaneous exclusive artifact creation and report output to a second user-supplied path.

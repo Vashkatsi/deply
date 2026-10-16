@@ -43,7 +43,8 @@ class TestJsonContract(unittest.TestCase):
         self.assertEqual(record["target_layer"], "infra")
         self.assertEqual(record["dependency_type"], "function_call")
         self.assertTrue(record["rule_id"].startswith("domain:disallow_layer_dependencies:"))
-        self.assertRegex(record["fingerprint"], r"^[0-9a-f]{64}$")
+        self.assertEqual(record["fingerprint"],
+                         "ab13821a2b00f55312661c30dd8a6a5ccb0161df1e36d11dbe04991e80f3737a")
 
     def test_fingerprint_ignores_locations_message_and_checkout(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -257,7 +258,7 @@ class TestJsonContract(unittest.TestCase):
     def test_cross_drive_paths_use_absolute_file_uri(self):
         root = Path.cwd()
         violation = self._dependency_violation(root)
-        with patch("deply.reports.formats.json_report.os.path.relpath", side_effect=ValueError("different drives")):
+        with patch("deply.models.violation_identity.os.path.relpath", side_effect=ValueError("different drives")):
             record = self._record(violation, root)
         self.assertEqual(record["source"]["file"], violation.file.resolve().as_uri())
         self.assertEqual(record["target"]["file"], violation.dependency.depends_on_code_element.file.resolve().as_uri())
