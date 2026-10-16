@@ -77,7 +77,7 @@ assessment reflects the codebase on 2026-10-02.
 
 ### P1: improve adoption after correctness
 
-7. **Add an exact violation baseline — implemented in the source tree.** `--max-violations` permits a new violation
+7. **Add an exact violation baseline — released in v1.2.2.** `--max-violations` permits a new violation
    when another one disappears, while inline ignores modify source. A generated
    baseline should fingerprint rule ID, normalized relative path, stable source and
    target identities, and architecture context. Location belongs in the stored
@@ -141,7 +141,7 @@ assessment reflects the codebase on 2026-10-02.
 | # | Recommendation | Verdict | Priority | Reason |
 |---|---|---|---|---|
 | 1 | Map an element to `Set[str]` | Resolved with explicit pair evaluation | P0 | Every matching membership is preserved and each unique source-target pair is checked independently of collector order. |
-| 2 | Violation baseline | Implemented, pending release | P1 | Accepts explicit relationship fingerprints and fails on new ones; exposes new/existing/resolved JSON records. |
+| 2 | Violation baseline | Released in v1.2.2 | P1 | Accepts explicit relationship fingerprints and fails on new ones; exposes new/existing/resolved JSON records. |
 | 3 | Layer cycle detection | Valid as an opt-in rule | P1 | Useful after graph correctness; not every architecture forbids every cycle. |
 | 4 | Parallel dependency analysis | Performance concern valid; action unproven | P2 | Collection and resolution parse included files separately; profiling must justify changes. |
 | 5 | Improve name resolution | Core module/import/lexical slice completed | P0 | Module identities, aliases, relative imports, re-exports, and basic shadowing resolve statically; advanced control flow and dynamic types remain pending. |
@@ -195,7 +195,7 @@ Each item should be a separate change with focused regression tests:
    control-flow and dynamic resolution remain deferred.
 7. ~~Add completeness metrics.~~ Resolved independently of the resolver.
 8. ~~Add stable violation fingerprints after stable module identities.~~ Resolved for JSON relationship identities.
-9. ~~Add baseline support.~~ Implemented; pending release.
+9. ~~Add baseline support.~~ Released in v1.2.2.
 10. Add the opt-in cycle rule.
 11. ~~Add SARIF output.~~ Resolved independently of the resolver.
 12. Optimize only with before/after benchmarks.

@@ -105,9 +105,8 @@ deply analyze --parallel
 
 ## Violation baseline
 
-Baseline support is available in this source tree; it is not part of the published
-v1.2.1 CLI. Check `deply analyze --help` before using these options, and pin a
-baseline-capable build in CI.
+Baseline support is available starting with v1.2.2. Pin a baseline-capable version
+in CI; v1.2.1 and earlier do not support these options.
 
 Explicitly accept reviewed existing debt, then check subsequent changes:
 
