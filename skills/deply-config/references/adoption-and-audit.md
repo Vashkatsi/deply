@@ -47,8 +47,8 @@ Rules:
 
 ## Debt Adoption and Agent Changes
 
-Baseline options are implemented in the source tree, not published v1.2.1. Inspect
-`deply analyze --help`; use a pinned baseline-capable build before following this flow.
+Baseline requires v1.2.2 or later. Inspect `deply analyze --help` and pin a supported
+version before following this flow.
 
 1. Validate the target config and inspect a complete analysis report.
 2. If the user accepts existing debt, explicitly create a new baseline:

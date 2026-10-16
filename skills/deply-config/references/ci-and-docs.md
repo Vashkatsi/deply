@@ -9,7 +9,7 @@ Use a pinned Deply version in CI for reproducibility.
 `pip`:
 
 ```bash
-python -m pip install "deply==1.2.1"
+python -m pip install "deply==1.2.2"
 deply validate --config=deply.yaml
 deply analyze --parallel --config=deply.yaml
 ```
@@ -17,30 +17,30 @@ deply analyze --parallel --config=deply.yaml
 `pipx`:
 
 ```bash
-pipx run --spec "deply==1.2.1" deply validate --config=deply.yaml
-pipx run --spec "deply==1.2.1" deply analyze --parallel --config=deply.yaml
+pipx run --spec "deply==1.2.2" deply validate --config=deply.yaml
+pipx run --spec "deply==1.2.2" deply analyze --parallel --config=deply.yaml
 ```
 
 `uv`:
 
 ```bash
-uvx --from "deply==1.2.1" deply validate --config=deply.yaml
-uvx --from "deply==1.2.1" deply analyze --parallel --config=deply.yaml
+uvx --from "deply==1.2.2" deply validate --config=deply.yaml
+uvx --from "deply==1.2.2" deply analyze --parallel --config=deply.yaml
 ```
 
 `poetry`:
 
 ```bash
-poetry add --group dev "deply==1.2.1"
+poetry add --group dev "deply==1.2.2"
 poetry run deply validate --config=deply.yaml
 poetry run deply analyze --parallel --config=deply.yaml
 ```
 
 ## Baseline-Capable Builds
 
-The v1.2.1 install examples below do not support baseline. Check `deply analyze --help`
-and pin a build containing this feature before adding a baseline check. Create and
-review the baseline once outside CI, following `adoption-and-audit.md`.
+The pinned v1.2.2 examples support baseline. Create and review the baseline once
+outside CI, following `adoption-and-audit.md`. Older versions require an upgrade
+before using baseline options.
 
 ```make
 architecture-check:
@@ -87,7 +87,7 @@ Use an exact numeric value in CI, not an untracked environment default.
 - name: Install Deply
   run: |
     python -m pip install --upgrade pip
-    python -m pip install "deply==1.2.1"
+    python -m pip install "deply==1.2.2"
 
 - name: Validate Deply config
   run: deply validate --config=deply.yaml
@@ -103,10 +103,10 @@ Use an exact numeric value in CI, not an untracked environment default.
   uses: astral-sh/setup-uv@v5
 
 - name: Validate Deply config
-  run: uvx --from "deply==1.2.1" deply validate --config=deply.yaml
+  run: uvx --from "deply==1.2.2" deply validate --config=deply.yaml
 
 - name: Check architecture
-  run: uvx --from "deply==1.2.1" deply analyze --parallel --report-format=github-actions --config=deply.yaml
+  run: uvx --from "deply==1.2.2" deply analyze --parallel --report-format=github-actions --config=deply.yaml
 ```
 
 Older-CLI numeric fallback:
@@ -123,7 +123,7 @@ architecture:
   image: python:3.12
   script:
     - python -m pip install --upgrade pip
-    - python -m pip install "deply==1.2.1"
+    - python -m pip install "deply==1.2.2"
     - deply validate --config=deply.yaml
     - deply analyze --parallel --config=deply.yaml
 ```
@@ -155,13 +155,13 @@ Suppression policy:
 
 - Existing `deply:ignore` and `deply:ignore-file` comments are reviewed during adoption.
 - New suppressions require a specific architectural reason in review.
-- Prefer config fixes or a temporary `--max-violations=N` ratchet over hiding violations.
+- Prefer config fixes or a reviewed baseline over hiding violations.
 
 CI behavior:
 
 - New projects should fail on any violation.
-- Legacy projects may temporarily use an exact `--max-violations=N` value equal to the current violation count.
-- Ratchet values should only decrease.
+- Legacy projects on v1.2.2 or later use `--baseline=deply-baseline.json`. CI never writes the baseline.
+- Older CLIs may use an explicitly accepted `--max-violations=N` fallback. The value should only decrease.
 ````
 
 Keep documentation factual. Do not describe rules that are not present in `deply.yaml`.
