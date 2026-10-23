@@ -4,8 +4,8 @@ Use this after `deply analyze` reports violations.
 
 ## Before Editing Code
 
-Check `deply context --help` once per installed CLI. Published v1.2.2 does not
-support this command; on older versions inspect the existing config and relevant
+Check `deply context --help` once per installed CLI. Context requires v1.3.0
+or later; on older versions inspect the existing config and relevant
 source files alongside `deply analyze --report-format=json`. Do not invent a
 context response, silently upgrade dependencies, or treat unsupported CLI options
 as a clean analysis.

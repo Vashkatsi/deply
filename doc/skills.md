@@ -6,7 +6,7 @@ nav_order: 9
 
 # Deply Config Agent Skill
 
-Deply v1.2.2 ships a portable Agent Skill at `skills/deply-config/`. Use it with Codex, Claude Code, or any Agent Skills-compatible assistant to create and validate `deply.yaml` for a Python project.
+Deply v1.3.0 ships a portable Agent Skill at `skills/deply-config/`. Use it with Codex, Claude Code, or any Agent Skills-compatible assistant to create and validate `deply.yaml` for a Python project.
 
 The skill guides the assistant through:
 
@@ -28,7 +28,7 @@ The skill guides the assistant through:
 ## Installation
 
 The current skill checks `deply context --help` before requesting JSON context for
-a file. Context is available in the development checkout, not published v1.2.2.
+a file. Context requires Deply v1.3.0 or later.
 On older installations it uses the existing config, source inspection and analysis
 report. After edits it reruns analysis with the reviewed baseline, if present;
 it never rewrites a baseline merely to pass checks. See the

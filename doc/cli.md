@@ -114,7 +114,7 @@ deply context --file src/orders/service.py --config deply.yaml --report-format=j
 `--file` is required. `--config` defaults to `deply.yaml`; `--report-format` defaults
 to `json`, the only supported format. Paths supplied on the CLI and paths inside
 the config resolve from the working directory, just as for `analyze`. Check
-`deply context --help` first: this command is not in the published v1.2.2 release.
+`deply context --help` first: this command requires Deply v1.3.0 or later.
 
 Context reuses the full configured analysis, including validation, exclusions,
 collectors, module resolution, rules and inline suppressions. Selecting a file

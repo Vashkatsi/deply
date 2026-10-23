@@ -9,7 +9,7 @@ Use a pinned Deply version in CI for reproducibility.
 `pip`:
 
 ```bash
-python -m pip install "deply==1.2.2"
+python -m pip install "deply==1.3.0"
 deply validate --config=deply.yaml
 deply analyze --parallel --config=deply.yaml
 ```
@@ -17,30 +17,31 @@ deply analyze --parallel --config=deply.yaml
 `pipx`:
 
 ```bash
-pipx run --spec "deply==1.2.2" deply validate --config=deply.yaml
-pipx run --spec "deply==1.2.2" deply analyze --parallel --config=deply.yaml
+pipx run --spec "deply==1.3.0" deply validate --config=deply.yaml
+pipx run --spec "deply==1.3.0" deply analyze --parallel --config=deply.yaml
 ```
 
 `uv`:
 
 ```bash
-uvx --from "deply==1.2.2" deply validate --config=deply.yaml
-uvx --from "deply==1.2.2" deply analyze --parallel --config=deply.yaml
+uvx --from "deply==1.3.0" deply validate --config=deply.yaml
+uvx --from "deply==1.3.0" deply analyze --parallel --config=deply.yaml
 ```
 
 `poetry`:
 
 ```bash
-poetry add --group dev "deply==1.2.2"
+poetry add --group dev "deply==1.3.0"
 poetry run deply validate --config=deply.yaml
 poetry run deply analyze --parallel --config=deply.yaml
 ```
 
 ## Baseline-Capable Builds
 
-The pinned v1.2.2 examples support baseline. Create and review the baseline once
-outside CI, following `adoption-and-audit.md`. Older versions require an upgrade
-before using baseline options.
+The pinned v1.3.0 examples support both commands. `deply context` requires v1.3.0
+or later; `--baseline` requires v1.2.2 or later. Create and review the baseline once
+outside CI, following `adoption-and-audit.md`. On v1.2.1 or older, upgrade for baseline
+support or use the numeric fallback only when explicitly accepted by the user.
 
 ```make
 architecture-check:
@@ -87,7 +88,7 @@ Use an exact numeric value in CI, not an untracked environment default.
 - name: Install Deply
   run: |
     python -m pip install --upgrade pip
-    python -m pip install "deply==1.2.2"
+    python -m pip install "deply==1.3.0"
 
 - name: Validate Deply config
   run: deply validate --config=deply.yaml
@@ -103,10 +104,10 @@ Use an exact numeric value in CI, not an untracked environment default.
   uses: astral-sh/setup-uv@v5
 
 - name: Validate Deply config
-  run: uvx --from "deply==1.2.2" deply validate --config=deply.yaml
+  run: uvx --from "deply==1.3.0" deply validate --config=deply.yaml
 
 - name: Check architecture
-  run: uvx --from "deply==1.2.2" deply analyze --parallel --report-format=github-actions --config=deply.yaml
+  run: uvx --from "deply==1.3.0" deply analyze --parallel --report-format=github-actions --config=deply.yaml
 ```
 
 Older-CLI numeric fallback:
@@ -123,7 +124,7 @@ architecture:
   image: python:3.12
   script:
     - python -m pip install --upgrade pip
-    - python -m pip install "deply==1.2.2"
+    - python -m pip install "deply==1.3.0"
     - deply validate --config=deply.yaml
     - deply analyze --parallel --config=deply.yaml
 ```
