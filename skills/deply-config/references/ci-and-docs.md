@@ -38,9 +38,10 @@ poetry run deply analyze --parallel --config=deply.yaml
 
 ## Baseline-Capable Builds
 
-The pinned v1.3.0 examples support context and baseline. Create and review the baseline once
-outside CI, following `adoption-and-audit.md`. Older versions require an upgrade
-before using baseline options.
+The pinned v1.3.0 examples support both commands. `deply context` requires v1.3.0
+or later; `--baseline` requires v1.2.2 or later. Create and review the baseline once
+outside CI, following `adoption-and-audit.md`. On v1.2.1 or older, upgrade for baseline
+support or use the numeric fallback only when explicitly accepted by the user.
 
 ```make
 architecture-check:
