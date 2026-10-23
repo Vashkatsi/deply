@@ -103,6 +103,92 @@ deply analyze --max-violations=5
 deply analyze --parallel
 ```
 
+## Context command
+
+Inspect one existing Python file before editing:
+
+```bash
+deply context --file src/orders/service.py --config deply.yaml --report-format=json
+```
+
+`--file` is required. `--config` defaults to `deply.yaml`; `--report-format` defaults
+to `json`, the only supported format. Paths supplied on the CLI and paths inside
+the config resolve from the working directory, just as for `analyze`. Check
+`deply context --help` first: this command is not in the published v1.2.2 release.
+
+Context reuses the full configured analysis, including validation, exclusions,
+collectors, module resolution, rules and inline suppressions. Selecting a file
+filters the output, not the scan: callers in other files must still be analyzed.
+There is no incremental analysis, transitive expansion, runtime inference, baseline
+comparison, output-file option, Mermaid output or automatic fix in this command.
+
+### JSON context contract
+
+The context schema is separate from the `analyze` schema; its initial
+`schema_version` is `1`. Reports contain:
+
+| Field | Meaning |
+|---|---|
+| `status` | `complete` or `incomplete` for the full configured analysis; neither means runtime completeness or absence of violations. |
+| `errors` | Sorted `{code: "incomplete_analysis", message: "..."}` diagnostics, empty on complete analysis. |
+| `file` | Canonical selected path, relative to the config directory, using `/` separators; cross-drive paths fall back to a file URI. |
+| `file_status` | File availability and membership, listed below. |
+| `elements` | Collected definitions in the selected file: `{file, name, type, line, column, layers}` with every matching layer. Uncollected definitions are not listed. |
+| `rules` | Effective constraints owned by selected layers, plus dependency restrictions from other layers that forbid selected layers. Each record contains `{rule_id, source_layer, kind, configuration}`. |
+| `incoming` | Direct resolved dependencies whose target is in the selected file. |
+| `outgoing` | Direct resolved dependencies whose source is in the selected file. |
+| `violations` | Unsuppressed findings originating in the selected file or targeting its elements; same records, `rule_id` and fingerprints as `analyze --report-format=json`. |
+| `metrics` | Completeness counters for the entire configured project, not just the selected file. |
+
+Each dependency has `{source, target, dependency_type, line, column}`. Endpoints
+have the same shape as `elements`, including definition locations and all layer
+memberships. The edge's `line` and `column` locate the use in the source file.
+Lines are one-based; columns are zero-based AST byte offsets. Same-file edges
+appear in both directions. Distinct locations and dependency types are retained;
+layer overlap does not duplicate an edge. Only statically resolved dependencies
+between collected elements appear. External import restrictions can appear in
+`rules` and `violations`, but external packages are not graph endpoints.
+
+Rule `configuration` contains the effective parameters used by the existing rule
+factory, including defaults and normalized sets, not arbitrary YAML metadata.
+Rules are layer-level constraints, not a claim that every rule checks every
+element type. Incoming restrictions are included even when no violating edge
+currently exists. Repeated identical configured rules appear once per `rule_id`.
+
+Output ordering is deterministic for unchanged inputs: elements by location/name/
+type, rules by ID, edges by their canonical JSON representation, and violations
+by the existing analysis ordering. Element and endpoint paths use the config
+directory as their root. Violation records preserve the analysis contract,
+including its legacy `file` field; use `source.file` and `target.file` for normalized
+identities. These guarantee compatible fingerprints without rewriting baselines.
+
+| `file_status` | Meaning |
+|---|---|
+| `mapped` | Included file with at least one collected element. |
+| `unmapped` | Included, parsed file with no collected elements. |
+| `excluded` | Discovered Python file excluded from every configured scan root. Inclusion through any root wins. |
+| `outside_scope` | Existing Python file not discovered under the configured roots. |
+| `not_found` | Selected path does not exist. |
+| `not_python` | Existing path is a directory or is not a `.py` file. |
+| `parse_failed` | Selected file failed reading or parsing during collection. |
+
+Exit `0` means `status: complete` **and** `file_status: mapped`, even if violations
+exist. Exit `1` means unavailable context, incomplete analysis, or invalid config.
+Argument errors, including a missing `--file`, exit `2`. Logs go to stderr; stdout
+contains one JSON object. Context does not write project files or baselines.
+
+Configuration validation happens before scanning. On invalid config, the command
+returns the existing JSON error envelope with `status: invalid_configuration`,
+`schema_version`, `errors`, `total_violations`, `by_type`, and `violations`; no
+context fields or metrics are available. Check `status` before reading context.
+On incomplete analysis, context fields may be partial: for example, collection
+errors stop dependency analysis, leaving edge lists empty. A mapped file can still
+have incomplete project context. Never interpret these empty lists as isolation.
+
+After editing, run `deply analyze --report-format=json`, adding the existing reviewed
+`--baseline` when used by the project. Context is discovery, not a replacement for
+that enforcement step.
+
 ## Violation baseline
 
 Baseline support is available starting with v1.2.2. Pin a baseline-capable version

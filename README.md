@@ -130,6 +130,26 @@ so additional call sites for accepted relationships are also accepted.
 See [baseline semantics and safe refresh](doc/cli.md#violation-baseline).
 Baseline support is available starting with Deply v1.2.2.
 
+## Architecture Context
+
+On a checkout/install that supports `deply context --help`, inspect one file before
+changing it:
+
+```bash
+deply context --file src/orders/service.py --config deply.yaml --report-format=json
+```
+
+The command analyzes the full configured project, then returns collected elements
+and all their layers, applicable rules with stable IDs, direct incoming/outgoing
+dependencies, related violations, and analysis/file status. JSON is the default
+and only format. Complete context for a mapped file exits `0` even with violations;
+unavailable or incomplete context exits `1`. Static edges do not prove runtime
+impact, and uncollected elements are outside this graph.
+
+After editing, run `deply analyze` (with the reviewed `--baseline` when available).
+See the [context contract](doc/cli.md#context-command). This command is not available
+in the published v1.2.2 release.
+
 ## Agent Skill
 
 Deply v1.2.2 includes a portable Agent Skill at `skills/deply-config/` for Codex, Claude Code, and other Agent Skills-compatible assistants. It helps an assistant inspect a Python project, generate `deply.yaml` using `light`, `medium`, or `strict` guidance, validate it with `deply validate`, run analysis, and add Makefile/CI/docs integration. These profiles belong to the Agent Skill; they are not built-in Deply CLI presets.

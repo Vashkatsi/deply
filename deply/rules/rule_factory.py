@@ -96,6 +96,7 @@ class RuleFactory:
         configuration = json.dumps(config, sort_keys=True, separators=(",", ":"))
         digest = hashlib.sha256(configuration.encode("utf-8")).hexdigest()
         rule.rule_id = f"{layer_name}:{key}:{digest}"
+        rule.definition = {"rule_id": rule.rule_id, "source_layer": layer_name, "kind": key, "configuration": config}
         return rule
 
     @staticmethod

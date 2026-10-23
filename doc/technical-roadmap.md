@@ -98,6 +98,13 @@ assessment reflects the codebase on 2026-10-02.
 
 ### P2: improve integrations
 
+**File architecture context — implemented, unreleased.** `deply context --file PATH`
+returns JSON for collected elements, all memberships, effective constraints,
+direct incoming/outgoing dependencies and related violations. It analyzes the
+full configured project and preserves existing rule IDs and fingerprints. Agents
+can inspect constraints before editing and enforce them afterward with analysis
+and a reviewed baseline. See the [context contract](cli.md#context-command).
+
 9. **Add SARIF 2.1.0 output — resolved.** `--report-format=sarif` exports stable
    rule IDs, line-level source locations, messages, help links, and completeness
    metrics without a new dependency. Results use a fixed `warning` level.

@@ -84,6 +84,12 @@ def main():
     )
     parser_validate = subparsers.add_parser('validate', help='Validate the configuration file')
     parser_validate.add_argument('--config', type=str, default="deply.yaml", help="Path to the configuration YAML file")
+    parser_context = subparsers.add_parser('context', help='Show architecture context for one Python file')
+    parser_context.add_argument('--file', dest='context_file', type=Path, required=True, help='Python file to inspect')
+    parser_context.add_argument('--config', default='deply.yaml', help='Path to the configuration YAML file')
+    parser_context.add_argument('--report-format', choices=['json'], default='json', help='Format of the context report')
+    parser_context.set_defaults(parallel=None, output=None, mermaid=False, baseline=None, write_baseline=None,
+                                max_violations=0)
     # pragma: no mutate end
 
     args = parser.parse_args()

@@ -12,28 +12,28 @@ class ViolationSerializer:
     def __init__(self, root: Path):
         self.root = root.resolve()
 
-    def _relative_path(self, file: Path) -> str:
+    def relative_path(self, file: Path) -> str:
         resolved_file = file.resolve()
         try:
             return Path(os.path.relpath(resolved_file, self.root)).as_posix()
         except ValueError:
             return resolved_file.as_uri()
 
-    def _element_identity(self, element: CodeElement) -> Dict[str, str]:
+    def element_identity(self, element: CodeElement) -> Dict[str, str]:
         return {
-            "file": self._relative_path(element.file),
+            "file": self.relative_path(element.file),
             "name": element.name,
             "type": element.element_type,
         }
 
     def serialize(self, violation: Violation) -> Dict[str, Any]:
         dependency = violation.dependency
-        source = self._element_identity(dependency.code_element) if dependency else {
-            "file": self._relative_path(violation.file),
+        source = self.element_identity(dependency.code_element) if dependency else {
+            "file": self.relative_path(violation.file),
             "name": "<module>" if violation.external_import else violation.element_name,
             "type": "module" if violation.external_import else violation.element_type,
         }
-        target = self._element_identity(dependency.depends_on_code_element) if dependency else None
+        target = self.element_identity(dependency.depends_on_code_element) if dependency else None
         if violation.external_import:
             target = {"module": violation.external_import, "type": "external_module"}
         identity = {

@@ -15,9 +15,11 @@ from deply.collectors.collector_factory import CollectorFactory
 from deply.config_parser import ConfigParser
 from deply.diagrams.marmaid_diagram_builder import MermaidDiagramBuilder
 from deply.models.code_element import CodeElement
+from deply.models.dependency import Dependency
 from deply.models.layer import Layer
 from deply.models.violation import Violation
 from deply.reports.report_generator import ReportGenerator
+from deply.reports.context_report import ContextReport
 from deply.rules import RuleFactory
 from deply.utils.ast_utils import parse_python_file
 from deply.utils.ignore_parser import parse_ignore_comments, ALL_SUPPRESSION_RULES, IgnoreMap
@@ -33,6 +35,11 @@ class DeplyRunner:
         self.ruleset = {}
         self.layer_collectors = []
         self.all_files = []
+        self.discovered_files: Set[Path] = set()
+        self.failed_files: Set[Path] = set()
+        self.context_file = getattr(args, "context_file", None)
+        self.context_file = self.context_file.resolve() if self.context_file is not None else None
+        self.context_dependencies: Set[Dependency] = set()
         self.layers: Dict[str, Layer] = {}
         self.code_element_to_layers: Dict[CodeElement, Set[str]] = {}
         self.absolute_imports_by_file: Dict[Path, List[Tuple[str, int, int]]] = {}
@@ -112,6 +119,7 @@ class DeplyRunner:
                     included_files.setdefault(file_path.resolve(), file_path)
 
         self.all_files = sorted(included_files.values())
+        self.discovered_files = discovered_files
         self.metrics["files_discovered"] = len(discovered_files)
         self.metrics["files_included"] = len(included_files)
         self.metrics["files_excluded"] = len(discovered_files - included_files.keys())
@@ -134,6 +142,7 @@ class DeplyRunner:
             if collect_external_imports:
                 self.absolute_imports_by_file[Path(file_path_str)] = absolute_imports
             if analysis_error:
+                self.failed_files.add(Path(file_path_str).resolve())
                 self.analysis_errors.append(analysis_error)
                 self.metrics["files_parse_failed"] += 1
             else:
@@ -198,6 +207,8 @@ class DeplyRunner:
         def dependency_handler(dependency):
             source = dependency.code_element
             target = dependency.depends_on_code_element
+            if self.context_file is not None and self.context_file in (source.file.resolve(), target.file.resolve()):
+                self.context_dependencies.add(dependency)
             source_layers = self.code_element_to_layers.get(source)
             target_layers = self.code_element_to_layers.get(target)
             self.metrics["dependencies_detected"] += 1
@@ -279,6 +290,12 @@ class DeplyRunner:
 
     def generate_report(self):
         logging.info("Generating report...")
+        if self.context_file is not None:
+            return ContextReport(
+                self.context_file, self.context_file_status(self.context_file), self.code_element_to_layers,
+                self.context_dependencies, self.rules, list(self.violations),
+                root=Path(self.args.config).resolve().parent, metrics=self.metrics, errors=self.analysis_errors,
+            ).generate()
         violations = list(self.violations)
         if self.baseline is not None and self.args.report_format != "json":
             serializer = ViolationSerializer(Path(self.args.config).resolve().parent)
@@ -291,6 +308,21 @@ class DeplyRunner:
             status="incomplete" if self.analysis_errors else "complete",
             errors=[{"code": "incomplete_analysis", "message": error} for error in sorted(self.analysis_errors)],
         ).generate(self.args.report_format)
+
+    def context_file_status(self, file: Path) -> str:
+        if not file.exists():
+            return "not_found"
+        if not file.is_file() or file.suffix != ".py":
+            return "not_python"
+        if file not in self.discovered_files:
+            return "outside_scope"
+        if file not in {included.resolve() for included in self.all_files}:
+            return "excluded"
+        if file in self.failed_files:
+            return "parse_failed"
+        if any(element.file.resolve() == file for element in self.code_element_to_layers):
+            return "mapped"
+        return "unmapped"
 
     def output_report(self, report):
         if self.args.output:
@@ -367,6 +399,8 @@ class DeplyRunner:
         report = self.generate_report()
         self.output_report(report)
 
+        if self.context_file is not None:
+            return self.context_file_status(self.context_file) == "mapped"
         if self.baseline is not None:
             return not self.baseline["new"]
         return bool(write_path) or len(self.violations) <= self.args.max_violations
