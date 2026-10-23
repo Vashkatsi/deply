@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Dict, Optional
 from ..models.dependency import Dependency
 from ..models.violation import Violation
 from ..models.code_element import CodeElement
@@ -7,6 +7,7 @@ from ..models.code_element import CodeElement
 class BaseRule:
     checks_external_imports = False
     rule_id: Optional[str] = None
+    definition: Optional[Dict[str, Any]] = None
 
     def check(
             self,
