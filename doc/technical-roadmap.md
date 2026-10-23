@@ -98,7 +98,7 @@ assessment reflects the codebase on 2026-10-02.
 
 ### P2: improve integrations
 
-**File architecture context — implemented, unreleased.** `deply context --file PATH`
+**File architecture context — released in v1.3.0.** `deply context --file PATH`
 returns JSON for collected elements, all memberships, effective constraints,
 direct incoming/outgoing dependencies and related violations. It analyzes the
 full configured project and preserves existing rule IDs and fingerprints. Agents

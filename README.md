@@ -147,12 +147,12 @@ unavailable or incomplete context exits `1`. Static edges do not prove runtime
 impact, and uncollected elements are outside this graph.
 
 After editing, run `deply analyze` (with the reviewed `--baseline` when available).
-See the [context contract](doc/cli.md#context-command). This command is not available
-in the published v1.2.2 release.
+See the [context contract](doc/cli.md#context-command). Context is available starting
+with Deply v1.3.0.
 
 ## Agent Skill
 
-Deply v1.2.2 includes a portable Agent Skill at `skills/deply-config/` for Codex, Claude Code, and other Agent Skills-compatible assistants. It helps an assistant inspect a Python project, generate `deply.yaml` using `light`, `medium`, or `strict` guidance, validate it with `deply validate`, run analysis, and add Makefile/CI/docs integration. These profiles belong to the Agent Skill; they are not built-in Deply CLI presets.
+Deply v1.3.0 includes a portable Agent Skill at `skills/deply-config/` for Codex, Claude Code, and other Agent Skills-compatible assistants. It helps an assistant inspect a Python project, generate `deply.yaml` using `light`, `medium`, or `strict` guidance, validate it with `deply validate`, run analysis, and add Makefile/CI/docs integration. These profiles belong to the Agent Skill; they are not built-in Deply CLI presets.
 
 Use it with:
 
