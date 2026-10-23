@@ -15,6 +15,7 @@ The skill guides the assistant through:
 - create/update mode for new or improved configs
 - audit mode for existing `deply.yaml`, CI, docs, and suppressions
 - violation triage after `deply analyze`
+- file architecture context before authorized code edits, when the installed CLI supports `deply context`
 - editable architecture recipes for layered, hexagonal, Django, FastAPI, modular monolith, monorepo, and trading/ccxt-style systems
 - `light`, `medium`, and `strict` Agent Skill profiles; these are guidance, not built-in Deply CLI presets
 - monorepo guidance for `apps/*`, `services/*`, `packages/*`, and `src/*`
@@ -25,6 +26,13 @@ The skill guides the assistant through:
 - Makefile, CI, and documentation updates
 
 ## Installation
+
+The current skill checks `deply context --help` before requesting JSON context for
+a file. Context is available in the development checkout, not published v1.2.2.
+On older installations it uses the existing config, source inspection and analysis
+report. After edits it reruns analysis with the reviewed baseline, if present;
+it never rewrites a baseline merely to pass checks. See the
+[context contract](cli.md#context-command).
 
 For Codex, copy the skill folder into your Codex skills directory:
 

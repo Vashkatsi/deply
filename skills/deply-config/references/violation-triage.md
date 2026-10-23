@@ -2,6 +2,39 @@
 
 Use this after `deply analyze` reports violations.
 
+## Before Editing Code
+
+Check `deply context --help` once per installed CLI. Published v1.2.2 does not
+support this command; on older versions inspect the existing config and relevant
+source files alongside `deply analyze --report-format=json`. Do not invent a
+context response, silently upgrade dependencies, or treat unsupported CLI options
+as a clean analysis.
+
+On a supporting CLI, run from the project root:
+
+```bash
+deply context --file src/orders/service.py --config=deply.yaml --report-format=json
+```
+
+- Require `status: complete` and `file_status: mapped` before relying on the result.
+  Invalid configuration uses the analysis error envelope without context fields.
+  Incomplete analysis may return elements but no edges; that is not proof of isolation.
+- Inspect every element's `layers`, effective `rules` with existing `rule_id` values,
+  direct `incoming`/`outgoing` edges and related unsuppressed `violations`.
+- Rules include restrictions owned by selected layers and restrictions that forbid
+  other layers from depending on them. These are constraints, not recommendations
+  to weaken config.
+- `excluded`, `outside_scope`, `unmapped`, `not_found`, `not_python`, and `parse_failed`
+  mean the selected file has no usable complete context. Report the gap and inspect
+  its cause; do not broaden scan scope or relax rules just to obtain a green result.
+- The entire configured project is analyzed. Only direct statically resolved edges
+  between collected elements are returned; no transitive or runtime impact guarantee.
+  Same-file edges can appear in both directions. External imports are represented
+  in restrictions/findings, not as graph endpoints.
+- Exit `0` confirms usable context, even with violations. After editing, run
+  `deply analyze --report-format=json` with the existing reviewed `--baseline`
+  when applicable. Never rewrite accepted debt merely to pass checks.
+
 ## Classify Each Violation
 
 - Real architecture issue: code depends outward or sideways against the chosen architecture.
