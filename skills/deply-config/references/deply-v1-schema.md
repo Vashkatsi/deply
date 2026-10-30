@@ -1,4 +1,4 @@
-# Deply v1.3.0 Schema Reference
+# Deply v1.3.1 Schema Reference
 
 Use this as the source of truth for generated `deply.yaml` files.
 
