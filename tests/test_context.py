@@ -75,6 +75,34 @@ class TestContext(unittest.TestCase):
         self.assertTrue({item["rule_id"] for item in related} <= {rule["rule_id"] for rule in report["rules"]})
         self.assertEqual(report["metrics"], analysis["metrics"])
 
+    def test_agent_context_then_baseline_detects_new_dependency(self):
+        self.selected.write_text("def serve():\n    pass\n")
+        baseline = self.root / "baseline.json"
+        result, report = self.run_cli(command="analyze", extra=("--write-baseline", str(baseline)))
+        self.assertEqual(result, 0)
+        self.assertTrue(report["violations"])
+        original_baseline = baseline.read_bytes()
+
+        result, context = self.run_cli()
+        self.assertEqual(result, 0)
+        self.assertEqual(context["status"], "complete")
+        self.assertEqual(context["file_status"], "mapped")
+        rule = next(rule for rule in context["rules"] if rule["source_layer"] == "service"
+                    and rule["kind"] == "disallow_layer_dependencies")
+        self.assertIn("store", rule["configuration"])
+
+        self.selected.write_text("from store import Store\ndef serve():\n    return Store()\n")
+        result, report = self.run_cli(command="analyze", extra=("--baseline", str(baseline)))
+        self.assertEqual(result, 1)
+        self.assertEqual(report["status"], "complete")
+        self.assertTrue(report["baseline"]["existing"])
+        self.assertTrue(report["baseline"]["new"])
+        self.assertTrue(all(item["rule_id"] == rule["rule_id"] for item in report["baseline"]["new"]))
+        self.assertTrue(all(item["source"]["file"] == "src/service.py"
+                            and item["target"]["file"] == "src/store.py"
+                            for item in report["baseline"]["new"]))
+        self.assertEqual(baseline.read_bytes(), original_baseline)
+
     def test_unavailable_files(self):
         unmapped = self.source_root / "unmapped.py"
         unmapped.write_text("class Unmapped: pass\n")
