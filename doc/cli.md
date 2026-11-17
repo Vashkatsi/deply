@@ -122,7 +122,7 @@ deply validate --config=custom_config.yaml
 
 ```bash
 deply init --list-presets
-deply init --preset django --output config/deply.yaml
+deply init --preset django --output architecture.yaml
 ```
 
 ### Generate GitHub Actions Report

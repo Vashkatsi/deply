@@ -41,7 +41,7 @@ Usually exclude migrations:
 
 ```yaml
 exclude_files:
-  - '.*/migrations/.*'
+  - '(^|/)migrations/'
 ```
 
 ## FastAPI
