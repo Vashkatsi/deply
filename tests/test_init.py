@@ -76,6 +76,15 @@ class TestInitCommand(unittest.TestCase):
         self.assertEqual(metrics["files_excluded"], 3)
         self.assertEqual(metrics["files_mapped"], 1)
 
+    def test_init_rejects_invalid_preset_content_without_writing(self):
+        invalid_preset = "deply:\n  paths: ['.']\n  layers: []\n  ruleset: {}\n"
+        with patch("deply.main.preset_text", return_value=invalid_preset):
+            exit_code, _, error = run_cli("init", "--preset", "fastapi")
+        self.assertEqual(exit_code, 1)
+        self.assertIn("Invalid deply configuration:", error)
+        self.assertIn("layers: must contain at least one layer", error)
+        self.assertFalse((self.root / "deply.yaml").exists())
+
     def test_init_refuses_to_overwrite_without_force(self):
         existing = self.root / "deply.yaml"
         existing.write_text("deply: {}\n")
