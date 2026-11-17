@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import tempfile
@@ -58,7 +59,7 @@ class TestInitCommand(unittest.TestCase):
         self.assertIn("deply.yaml", output)
         written = yaml.safe_load((self.root / "deply.yaml").read_text())
         self.assertEqual(written["deply"]["paths"], ["."])
-        self.assertIn(r".*/\.venv/.*", written["deply"]["exclude_files"])
+        self.assertIn(r"(^|/)\.venv/", written["deply"]["exclude_files"])
         self.assertEqual([layer["name"] for layer in written["deply"]["layers"]],
                          ["domain", "application", "infrastructure", "interface"])
         self.assertEqual(run_cli("validate")[0], 0)
@@ -69,6 +70,19 @@ class TestInitCommand(unittest.TestCase):
                 output_path = self.root / f"{name}.yaml"
                 self.assertEqual(run_cli("init", "--preset", name, "--output", str(output_path))[0], 0)
                 self.assertEqual(yaml.safe_load(output_path.read_text()), render_preset(name, ["."]))
+
+    def test_init_preset_excludes_root_level_virtualenv_tests_and_migrations(self):
+        (self.root / "src" / "app" / "domain").mkdir(parents=True)
+        (self.root / "src" / "app" / "domain" / "entity.py").write_text("class Entity: pass\n")
+        for excluded_directory in (".venv", "tests", "migrations"):
+            (self.root / excluded_directory).mkdir()
+            (self.root / excluded_directory / "broken.py").write_text("class Broken:\n")
+        self.assertEqual(run_cli("init", "--preset", "fastapi")[0], 0)
+        exit_code, output, _ = run_cli("analyze", "--report-format", "json")
+        self.assertEqual(exit_code, 0)
+        metrics = json.loads(output)["metrics"]
+        self.assertEqual(metrics["files_excluded"], 3)
+        self.assertEqual(metrics["files_mapped"], 1)
 
     def test_init_refuses_to_overwrite_without_force(self):
         existing = self.root / "deply.yaml"

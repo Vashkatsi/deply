@@ -32,9 +32,9 @@ deply:
     - "."
 
   exclude_files:
-    - '.*/\.venv/.*'
-    - '.*/tests?/.*'
-    - '.*/migrations/.*'
+    - '(^|/)\.venv/'
+    - '(^|/)tests?/'
+    - '(^|/)migrations/'
 
   layers:
     - name: domain
@@ -141,7 +141,7 @@ Generated migrations should normally stay outside architecture analysis:
 
 ```yaml
 exclude_files:
-  - '.*/migrations/.*'
+  - '(^|/)migrations/'
 ```
 
 Analyze migrations only when dependencies inside migration code are part of

@@ -31,9 +31,9 @@ deply:
     - "."
 
   exclude_files:
-    - '.*/\.venv/.*'
-    - '.*/tests?/.*'
-    - '.*/migrations/.*'
+    - '(^|/)\.venv/'
+    - '(^|/)tests?/'
+    - '(^|/)migrations/'
 
   layers:
     - name: domain
