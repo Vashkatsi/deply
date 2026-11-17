@@ -23,6 +23,15 @@ pip install deply
 
 Once you have installed Deply, you will need to create a configuration file, where you define your layers and communication ruleset. Deply reads it from `deply.yaml` in your project's root directory, or from a `[tool.deply]` table in `pyproject.toml` (Python 3.11+, available starting with Deply v1.3.2).
 
+Starting with Deply v1.3.2, write a validated starter file from a packaged preset instead of hand-writing it:
+
+```bash
+deply init --list-presets
+deply init --preset fastapi
+```
+
+Available presets: `layered`, `django`, `fastapi`, and `flask`. The command never overwrites an existing file unless you pass `--force`. Adjust the layer directories to your project, then validate with `deply validate`.
+
 When you have this file, you can analyse your code by running the analyze command:
 
 ```bash
@@ -243,7 +252,7 @@ See [Agent Skill](https://vashkatsi.github.io/deply/doc/skills.html) for install
 - **Config Validation**: Validate `deply.yaml` or `pyproject.toml` `[tool.deply]` explicitly or automatically before analysis.
 - **CI Integration**: Run Deply through the provided pre-commit hooks or GitHub Action.
 - **SARIF Reports**: Export findings for GitHub Code Scanning with `deply analyze --report-format=sarif --output=deply.sarif`. See the [CLI guide](doc/cli.md#sarif-report) for upload instructions and limitations.
-- **Architecture Recipes**: Copy and adapt documented configurations for 21 architecture and application patterns; they are not built-in presets.
+- **Architecture Recipes**: Copy and adapt documented configurations for 21 architecture and application patterns. The layered recipe and the Django, FastAPI, and Flask framework recipes also ship as `deply init` presets.
 
 Existing v1 YAML configurations remain supported. Module-aware resolution removes
 unrelated same-name matches and can reveal previously missed violations. A known

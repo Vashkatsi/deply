@@ -25,9 +25,9 @@ deply:
   paths:
     - "."
   exclude_files:
-    - '.*/\.venv/.*'
-    - '.*/tests?/.*'
-    - '.*/migrations/.*'
+    - '(^|/)\.venv/'
+    - '(^|/)tests?/'
+    - '(^|/)migrations/'
   layers:
     - name: domain
       collectors:
@@ -67,9 +67,9 @@ deply:
   paths:
     - "."
   exclude_files:
-    - '.*/\.venv/.*'
-    - '.*/tests?/.*'
-    - '.*/migrations/.*'
+    - '(^|/)\.venv/'
+    - '(^|/)tests?/'
+    - '(^|/)migrations/'
   layers:
     - name: domain
       collectors:

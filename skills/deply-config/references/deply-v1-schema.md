@@ -12,8 +12,8 @@ deply:
     - "."
 
   exclude_files:
-    - '.*/\.venv/.*'
-    - '.*/tests?/.*'
+    - '(^|/)\.venv/'
+    - '(^|/)tests?/'
 
   layers:
     - name: layer_name

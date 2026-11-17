@@ -11,7 +11,7 @@ nav_order: 1
 Layered architecture groups code by responsibility. A common direction is
 presentation → application → domain, with infrastructure serving outer layers.
 Use it when the responsibilities are stable and a feature-oriented structure
-would not be clearer.
+would not be clearer. `deply init --preset layered` writes the same starting point.
 
 ```text
 src/app/
@@ -27,9 +27,9 @@ src/app/
 deply:
   paths: ["."]
   exclude_files:
-    - '.*/\.venv/.*'
-    - '.*/tests?/.*'
-    - '.*/migrations/.*'
+    - '(^|/)\.venv/'
+    - '(^|/)tests?/'
+    - '(^|/)migrations/'
   layers:
     - name: presentation
       collectors:

@@ -129,13 +129,14 @@ and a reviewed baseline. See the [context contract](cli.md#context-command).
 
 ### P3: defer until demand is demonstrated
 
-12. **Prefer scriptable presets over an interactive `deply init` wizard.** The 21
-    architecture recipes are documentation, not versioned built-in CLI presets.
-    The Agent Skill's `light`, `medium`, and `strict` profiles are guidance, not
-    runtime features. If setup friction is demonstrated, first add a small
-    non-interactive command such as
-    `deply init --preset fastapi` with validated packaged templates and safe
-    overwrite behavior. Add a wizard only if users still need one.
+12. **Prefer scriptable presets over an interactive `deply init` wizard — first
+    slice completed.** `deply init --preset <name>` writes a validated starter
+    configuration from packaged `layered`, `django`, `fastapi`, and `flask`
+    presets, lists presets with `--list-presets`, and never overwrites an
+    existing file without `--force`. The other 20 architecture recipes stay
+    documentation, and the Agent Skill's `light`, `medium`, and `strict` profiles
+    remain guidance, not runtime features. Add more presets or a wizard only if
+    users still need one.
 
 13. **Defer custom rule plugins.** Custom collectors already load user Python code,
     but rule interfaces may change with layer ownership and dependency resolution.
@@ -153,7 +154,7 @@ and a reviewed baseline. See the [context contract](cli.md#context-command).
 | 4 | Parallel dependency analysis | Performance concern valid; action unproven | P2 | Collection and resolution parse included files separately; profiling must justify changes. |
 | 5 | Improve name resolution | Core module/import/lexical slice completed | P0 | Module identities, aliases, relative imports, re-exports, and basic shadowing resolve statically; advanced control flow and dynamic types remain pending. |
 | 6 | SARIF report | Resolved | P2 | SARIF 2.1.0 output and GitHub upload recipe; analysis accuracy limitations remain. |
-| 7 | `deply init` | Direction valid; wizard premature | P3 | Recipes are not packaged presets and the agent skill already reduces setup cost. Start with a scriptable preset only after measuring demand. |
+| 7 | `deply init` | Scriptable presets shipped; wizard still premature | P3 | `deply init --preset` writes validated packaged templates for four recipes with safe overwrite behavior. Add a wizard only if demand remains. |
 | 8 | Custom rule plugins | Technically valid; defer | P3 | No demonstrated demand and core rule contracts are not stable enough yet. |
 
 ## Verified evidence

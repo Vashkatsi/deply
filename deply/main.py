@@ -2,13 +2,14 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import yaml
 from deply import __version__
 from deply.config_parser import ConfigParser, discover_config_path
 from deply.config_validator import ConfigValidator
 from deply.deply_runner import DeplyRunner
+from deply.presets import available_presets, preset_text
 from deply.reports.report_generator import ReportGenerator
 
 CONFIG_HELP = "Path to the configuration file; defaults to deply.yaml, then pyproject.toml [tool.deply]"
@@ -39,10 +40,36 @@ def validate_configuration(
             Path(output).write_text(report)
         else:
             print(report)
+    report_configuration_errors(errors)
+    return False
+
+
+def report_configuration_errors(errors: List[str]) -> None:
     print("Invalid deply configuration:", file=sys.stderr)
     for error in errors:
         print(f"- {error}", file=sys.stderr)
-    return False
+
+
+def initialize_configuration(preset: str, output: str, force: bool) -> bool:
+    output_path = Path(output)
+    content = preset_text(preset)
+    errors = ConfigValidator(output_path).validate(yaml.safe_load(content)["deply"])
+    if errors:
+        report_configuration_errors(errors)
+        return False
+
+    try:
+        with output_path.open("w" if force else "x") as output_file:
+            output_file.write(content)
+    except FileExistsError:
+        print(f"{output_path} already exists; use --force to overwrite it", file=sys.stderr)
+        return False
+    except OSError as exception:
+        print(f"Cannot write {output_path}: {exception}", file=sys.stderr)
+        return False
+
+    print(f"Created {output_path} from preset '{preset}'")
+    return True
 
 
 def main():
@@ -92,6 +119,12 @@ def main():
     parser_context.add_argument('--report-format', choices=['json'], default='json', help='Format of the context report')
     parser_context.set_defaults(parallel=None, output=None, mermaid=False, baseline=None, write_baseline=None,
                                 max_violations=0)
+    parser_init = subparsers.add_parser('init', help='Write a starter configuration file from a packaged preset')
+    init_selection = parser_init.add_mutually_exclusive_group(required=True)
+    init_selection.add_argument('--preset', choices=available_presets(), help='Preset to write')
+    init_selection.add_argument('--list-presets', action='store_true', help='List available presets and exit')
+    parser_init.add_argument('--output', default='deply.yaml', help='Configuration file to create')
+    parser_init.add_argument('--force', action='store_true', help='Overwrite an existing configuration file')
     # pragma: no mutate end
 
     args = parser.parse_args()
@@ -102,6 +135,12 @@ def main():
 
     if args.command is None:
         args = parser.parse_args(['analyze'] + sys.argv[1:])  # pragma: no mutate
+
+    if args.command == "init":
+        if args.list_presets:
+            print("\n".join(available_presets()))
+            sys.exit(0)
+        sys.exit(0 if initialize_configuration(args.preset, args.output, args.force) else 1)
 
     if args.config is None:
         args.config = str(discover_config_path(Path()))

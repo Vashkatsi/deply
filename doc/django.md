@@ -8,7 +8,8 @@ nav_order: 2
 # Django Configuration Recipe
 
 This recipe treats Django models as persistence adapters and views as the
-interface layer. It is regular Deply configuration, not a built-in preset.
+interface layer. It is regular Deply configuration; `deply init --preset django`
+writes the same starting point.
 Adapt the directories and boundaries when the project uses Django Active
 Record models as its domain model.
 
@@ -31,9 +32,9 @@ deply:
     - "."
 
   exclude_files:
-    - '.*/\.venv/.*'
-    - '.*/tests?/.*'
-    - '.*/migrations/.*'
+    - '(^|/)\.venv/'
+    - '(^|/)tests?/'
+    - '(^|/)migrations/'
 
   layers:
     - name: domain
@@ -140,7 +141,7 @@ Generated migrations should normally stay outside architecture analysis:
 
 ```yaml
 exclude_files:
-  - '.*/migrations/.*'
+  - '(^|/)migrations/'
 ```
 
 Analyze migrations only when dependencies inside migration code are part of

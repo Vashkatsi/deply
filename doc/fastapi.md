@@ -9,7 +9,8 @@ has_children: true
 # FastAPI Configuration Recipe
 
 This recipe is a starting point for a layered FastAPI project. It is regular
-Deply configuration, not a built-in preset. Adapt the source directories and
+Deply configuration; `deply init --preset fastapi` writes the same starting
+point. Adapt the source directories and
 rules to the architecture the project actually uses.
 
 ## Verified Template Recipe
@@ -36,9 +37,9 @@ deply:
     - "."
 
   exclude_files:
-    - '.*/\.venv/.*'
-    - '.*/tests?/.*'
-    - '.*/migrations/.*'
+    - '(^|/)\.venv/'
+    - '(^|/)tests?/'
+    - '(^|/)migrations/'
 
   layers:
     - name: domain

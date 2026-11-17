@@ -122,9 +122,9 @@ Use these editable starting points for common Python web frameworks:
 - [Django](django.html)
 - [Flask](flask.html)
 
-These recipes use the existing Deply configuration schema. They are not
-built-in presets and should be adapted to the project's actual directories and
-architecture.
+These recipes use the existing Deply configuration schema. The Django, FastAPI,
+and Flask recipes also ship as `deply init --preset` templates. Every recipe
+should be adapted to the project's actual directories and architecture.
 
 ## Architecture and Pattern Recipes
 
