@@ -39,6 +39,12 @@ deply:
           directories:
             - utils
 
+    - name: presets
+      collectors:
+        - type: directory
+          directories:
+            - presets
+
     - name: cli
       collectors:
         - type: file_regex
@@ -57,6 +63,7 @@ deply:
         - reports
         - diagrams
         - utils
+        - presets
         - cli
         - orchestration
       disallow_external_imports:
@@ -68,6 +75,7 @@ deply:
         - rules
         - reports
         - diagrams
+        - presets
         - cli
         - orchestration
       disallow_external_imports:
@@ -80,6 +88,7 @@ deply:
         - reports
         - diagrams
         - utils
+        - presets
         - cli
         - orchestration
       disallow_external_imports:
@@ -91,6 +100,7 @@ deply:
         - collectors
         - diagrams
         - utils
+        - presets
         - cli
         - orchestration
       disallow_external_imports:
@@ -104,6 +114,7 @@ deply:
         - rules
         - reports
         - utils
+        - presets
         - cli
         - orchestration
       disallow_external_imports:
@@ -116,6 +127,7 @@ deply:
         - rules
         - reports
         - diagrams
+        - presets
         - cli
         - orchestration
       disallow_external_imports:
@@ -124,6 +136,21 @@ deply:
 
     orchestration:
       disallow_layer_dependencies:
+        - presets
         - cli
       disallow_external_imports:
         - argparse
+
+    presets:
+      disallow_layer_dependencies:
+        - models
+        - collectors
+        - rules
+        - reports
+        - diagrams
+        - utils
+        - cli
+        - orchestration
+      disallow_external_imports:
+        - argparse
+        - yaml
