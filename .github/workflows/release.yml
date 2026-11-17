@@ -263,6 +263,7 @@ jobs:
     concurrency:
       group: move-major-tag
       cancel-in-progress: false
+      queue: max
     permissions:
       contents: write
 
@@ -278,9 +279,13 @@ jobs:
 
           MAJOR_TAG="v${BASH_REMATCH[1]}"
           git fetch --force --tags origin
-          LATEST_RELEASE_TAG=$(git tag --list "${MAJOR_TAG}.*.*" | grep -E "^${MAJOR_TAG}\.[0-9]+\.[0-9]+$" | sort -V | tail -n 1)
-          if [[ "${LATEST_RELEASE_TAG}" != "${GITHUB_REF_NAME}" ]]; then
-            echo "Skipping ${MAJOR_TAG}: ${GITHUB_REF_NAME} is older than ${LATEST_RELEASE_TAG}."
+          PROMOTED_RELEASE_TAG=""
+          if git rev-parse -q --verify "refs/tags/${MAJOR_TAG}" > /dev/null; then
+            PROMOTED_RELEASE_TAG=$(git tag --points-at "refs/tags/${MAJOR_TAG}^{commit}" | grep -E "^${MAJOR_TAG}\.[0-9]+\.[0-9]+$" | sort -V | tail -n 1 || true)
+          fi
+          NEWEST_RELEASE_TAG=$(printf '%s\n' "${PROMOTED_RELEASE_TAG}" "${GITHUB_REF_NAME}" | sort -V | tail -n 1)
+          if [[ "${NEWEST_RELEASE_TAG}" != "${GITHUB_REF_NAME}" || "${PROMOTED_RELEASE_TAG}" == "${GITHUB_REF_NAME}" ]]; then
+            echo "Skipping ${MAJOR_TAG}: it already points to ${PROMOTED_RELEASE_TAG}."
             exit 0
           fi
 
