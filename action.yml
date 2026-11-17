@@ -1,4 +1,4 @@
-name: Deply
+name: Deply Architecture Check
 description: Check Python architecture rules with Deply.
 branding:
   icon: layers

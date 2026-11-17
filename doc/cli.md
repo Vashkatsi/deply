@@ -158,7 +158,7 @@ The pre-commit hooks and the GitHub Action are available starting with Deply v1.
 ```yaml
 repos:
   - repo: https://github.com/Vashkatsi/deply
-    rev: v1.3.2
+    rev: v1.3.3
     hooks:
       - id: deply
         args: [--config=deply.yaml, --baseline=deply-baseline.json]
