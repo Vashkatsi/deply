@@ -46,7 +46,7 @@ deply --help
 
 ### Analyze Command Options
 
-- `--config`: Path to the configuration YAML file (default: `deply.yaml`)
+- `--config`: Path to the configuration file (`deply.yaml` or `pyproject.toml`); see [Configuration File Discovery](#configuration-file-discovery)
 - `--report-format`: Format of the output report (choices: `text`, `json`, `github-actions`, `sarif`, default: `text`)
 - `--output`: Output file for the report (if not specified, prints to console)
 - `--mermaid`: Generates a Mermaid diagram of layer dependencies
@@ -57,7 +57,20 @@ deply --help
 
 ### Validate Command Options
 
-- `--config`: Path to the configuration YAML file (default: `deply.yaml`)
+- `--config`: Path to the configuration file (`deply.yaml` or `pyproject.toml`); see [Configuration File Discovery](#configuration-file-discovery)
+
+### Configuration File Discovery
+
+When `--config` is omitted, every command resolves the configuration file in this order:
+
+1. `deply.yaml` in the working directory.
+2. `pyproject.toml` in the working directory, when it contains a `[tool.deply]` table.
+3. Otherwise Deply reports that `deply.yaml` does not exist.
+
+A `--config` path ending in `.toml` is read as `pyproject.toml` with a `[tool.deply]`
+table. TOML support uses the standard library `tomllib` and requires Python 3.11 or
+newer; older interpreters read `deply.yaml` only and reject a TOML path with an explicit
+error. See [Using pyproject.toml](configuration.html#using-pyprojecttoml).
 
 ## Examples
 
@@ -187,7 +200,7 @@ Inspect one existing Python file before editing:
 deply context --file src/orders/service.py --config deply.yaml --report-format=json
 ```
 
-`--file` is required. `--config` defaults to `deply.yaml`; `--report-format` defaults
+`--file` is required. `--config` follows the same discovery as `analyze`; `--report-format` defaults
 to `json`, the only supported format. Paths supplied on the CLI and paths inside
 the config resolve from the working directory, just as for `analyze`. Check
 `deply context --help` first: this command requires Deply v1.3.0 or later.

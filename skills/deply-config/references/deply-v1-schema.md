@@ -1,6 +1,6 @@
 # Deply v1.3.1 Schema Reference
 
-Use this as the source of truth for generated `deply.yaml` files.
+Use this as the source of truth for generated `deply.yaml` files and `[tool.deply]` tables in `pyproject.toml`.
 
 ## File Shape
 
@@ -29,6 +29,34 @@ deply:
 ```
 
 Run commands from the project root when using relative paths.
+
+## pyproject.toml Form
+
+When the project keeps tool settings in `pyproject.toml` and runs on Python 3.11 or
+newer, the same configuration may live under `[tool.deply]`. The table maps
+one-to-one to the content of the `deply:` key; use TOML literal strings (single
+quotes) for regexes:
+
+```toml
+[tool.deply]
+paths = ["."]
+exclude_files = ['.*/\.venv/.*', '.*/tests?/.*']
+
+[[tool.deply.layers]]
+name = "layer_name"
+
+[[tool.deply.layers.collectors]]
+type = "directory"
+directories = ["src/package/path"]
+
+[tool.deply.ruleset.layer_name]
+disallow_layer_dependencies = ["other_layer"]
+```
+
+Deply uses `deply.yaml` when it exists, otherwise `pyproject.toml` with a `[tool.deply]`
+table. Prefer `deply.yaml` when the project must run Deply on Python 3.8 to 3.10, because
+TOML parsing uses the standard library `tomllib`. Validate a TOML config with
+`deply validate --config=pyproject.toml`.
 
 ## Top-Level Keys
 
