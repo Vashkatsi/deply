@@ -136,7 +136,7 @@ repos:
 | Hook id | Command | Runs when |
 |---------|---------|-----------|
 | `deply` | `deply analyze` | Python files are staged |
-| `deply-validate` | `deply validate` | A file named `deply.yaml` or `deply.yml` is staged |
+| `deply-validate` | `deply validate` | A file named `deply.yaml`, `deply.yml` or `pyproject.toml` is staged |
 
 Both hooks analyze the configured project, not the staged files: file names are not
 passed to Deply. Extra options go in `args`. If the configuration file has another
@@ -164,7 +164,7 @@ checkout, so the installed version matches the referenced ref, then runs
 
 | Input | Default | Description |
 |-------|---------|-------------|
-| `config` | `deply.yaml` | Configuration file passed as `--config` to both commands |
+| `config` | empty | When set, passes `--config=<path>` to both commands; otherwise Deply discovers `deply.yaml` or `pyproject.toml` |
 | `report-format` | `github-actions` | Report format for `deply analyze`; the default reports violations as annotations |
 | `baseline` | empty | When set, passes `--baseline=<path>` to `deply analyze` |
 | `args` | empty | Extra arguments appended to `deply analyze`, split on whitespace |

@@ -6,9 +6,9 @@ branding:
 
 inputs:
   config:
-    description: Path to the Deply configuration file.
+    description: Path to the Deply configuration file. Empty lets Deply discover deply.yaml or pyproject.toml.
     required: false
-    default: deply.yaml
+    default: ""
   args:
     description: Extra whitespace-separated arguments appended to deply analyze.
     required: false
@@ -41,7 +41,7 @@ runs:
       shell: bash
       env:
         DEPLY_CONFIG: ${{ inputs.config }}
-      run: deply validate --config="$DEPLY_CONFIG"
+      run: deply validate ${DEPLY_CONFIG:+"--config=$DEPLY_CONFIG"}
 
     - name: Analyze architecture
       shell: bash
@@ -51,5 +51,5 @@ runs:
         DEPLY_BASELINE: ${{ inputs.baseline }}
         DEPLY_ARGS: ${{ inputs.args }}
       run: >-
-        deply analyze --config="$DEPLY_CONFIG" --report-format="$DEPLY_REPORT_FORMAT"
+        deply analyze ${DEPLY_CONFIG:+"--config=$DEPLY_CONFIG"} --report-format="$DEPLY_REPORT_FORMAT"
         ${DEPLY_BASELINE:+"--baseline=$DEPLY_BASELINE"} $DEPLY_ARGS
