@@ -21,7 +21,7 @@ You can install Deply via pip:
 pip install deply
 ```
 
-Once you have installed Deply, you will need to create a configuration file, where you define your layers and communication ruleset. This configuration file is written in YAML and, by default, is stored with the name deply.yaml in your project's root directory.
+Once you have installed Deply, you will need to create a configuration file, where you define your layers and communication ruleset. Deply reads it from `deply.yaml` in your project's root directory, or from a `[tool.deply]` table in `pyproject.toml` (Python 3.11+, available starting with Deply v1.3.2).
 
 When you have this file, you can analyse your code by running the analyze command:
 
@@ -31,6 +31,8 @@ deply analyze
 # which is equivalent to
 deply analyze --config=deply.yaml
 ```
+
+Without `--config`, Deply uses `deply.yaml` if it exists, otherwise `pyproject.toml` when it contains a `[tool.deply]` table. An explicit `--config=pyproject.toml` works as well. See the [configuration guide](doc/configuration.md#using-pyprojecttoml) for details.
 
 In order to run Deply you need at least Python 3.8.
 Supported and tested versions: Python 3.8 to 3.14.
@@ -72,6 +74,41 @@ deply:
       disallow_external_imports:
         - django
         - requests
+```
+
+The same configuration as a `[tool.deply]` table in `pyproject.toml`:
+
+```toml
+[tool.deply]
+paths = ["/path/to/your/project"]
+exclude_files = ['.*\.venv/.*']
+
+[[tool.deply.layers]]
+name = "models"
+
+[[tool.deply.layers.collectors]]
+type = "class_inherits"
+base_class = "django.db.models.Model"
+
+[[tool.deply.layers]]
+name = "views"
+
+[[tool.deply.layers.collectors]]
+type = "file_regex"
+regex = ".*/views_api.py"
+
+[[tool.deply.layers]]
+name = "services"
+
+[[tool.deply.layers.collectors]]
+type = "class_name_regex"
+class_name_regex = ".*Service$"
+
+[tool.deply.ruleset.views]
+disallow_layer_dependencies = ["models"]
+
+[tool.deply.ruleset.services]
+disallow_external_imports = ["django", "requests"]
 ```
 
 Code elements may belong to multiple layers. Deply checks every unique source
@@ -203,7 +240,7 @@ See [Agent Skill](https://vashkatsi.github.io/deply/doc/skills.html) for install
 - **Extensible and Configurable**: Customize layers with built-in or custom collectors and supported rules.
 - **Mermaid Diagrams**: Visualize your architecture and dependencies with Mermaid diagrams.
 - **Error Suppression**: Suppress specific rule violations with inline comments.
-- **Config Validation**: Validate `deply.yaml` explicitly or automatically before analysis.
+- **Config Validation**: Validate `deply.yaml` or `pyproject.toml` `[tool.deply]` explicitly or automatically before analysis.
 - **CI Integration**: Run Deply through the provided pre-commit hooks or GitHub Action.
 - **SARIF Reports**: Export findings for GitHub Code Scanning with `deply analyze --report-format=sarif --output=deply.sarif`. See the [CLI guide](doc/cli.md#sarif-report) for upload instructions and limitations.
 - **Architecture Recipes**: Copy and adapt documented configurations for 21 architecture and application patterns; they are not built-in presets.

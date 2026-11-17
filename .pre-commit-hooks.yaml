@@ -11,5 +11,5 @@
   description: Validate the Deply configuration.
   entry: deply validate
   language: python
-  files: '(^|/)deply\.ya?ml$'
+  files: '(^|/)(deply\.ya?ml|pyproject\.toml)$'
   pass_filenames: false

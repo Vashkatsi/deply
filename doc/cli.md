@@ -46,7 +46,7 @@ deply --help
 
 ### Analyze Command Options
 
-- `--config`: Path to the configuration YAML file (default: `deply.yaml`)
+- `--config`: Path to the configuration file (`deply.yaml` or `pyproject.toml`); see [Configuration File Discovery](#configuration-file-discovery)
 - `--report-format`: Format of the output report (choices: `text`, `json`, `github-actions`, `sarif`, default: `text`)
 - `--output`: Output file for the report (if not specified, prints to console)
 - `--mermaid`: Generates a Mermaid diagram of layer dependencies
@@ -57,7 +57,21 @@ deply --help
 
 ### Validate Command Options
 
-- `--config`: Path to the configuration YAML file (default: `deply.yaml`)
+- `--config`: Path to the configuration file (`deply.yaml` or `pyproject.toml`); see [Configuration File Discovery](#configuration-file-discovery)
+
+### Configuration File Discovery
+
+`pyproject.toml` configuration is available starting with Deply v1.3.2.
+When `--config` is omitted, every command resolves the configuration file in this order:
+
+1. `deply.yaml` in the working directory.
+2. `pyproject.toml` in the working directory, when it contains a `[tool.deply]` table.
+3. Otherwise Deply reports that `deply.yaml` does not exist.
+
+A `--config` path ending in `.toml` is read as `pyproject.toml` with a `[tool.deply]`
+table. TOML support uses the standard library `tomllib` and requires Python 3.11 or
+newer; on older interpreters a discovered or explicit `pyproject.toml` fails with an
+explicit error, so create `deply.yaml` there. See [Using pyproject.toml](configuration.html#using-pyprojecttoml).
 
 ## Examples
 
@@ -123,7 +137,7 @@ repos:
 | Hook id | Command | Runs when |
 |---------|---------|-----------|
 | `deply` | `deply analyze` | Python files are staged |
-| `deply-validate` | `deply validate` | A file named `deply.yaml` or `deply.yml` is staged |
+| `deply-validate` | `deply validate` | A file named `deply.yaml`, `deply.yml` or `pyproject.toml` is staged |
 
 Both hooks analyze the configured project, not the staged files: file names are not
 passed to Deply. Extra options go in `args`. If the configuration file has another
@@ -151,7 +165,7 @@ checkout, so the installed version matches the referenced ref, then runs
 
 | Input | Default | Description |
 |-------|---------|-------------|
-| `config` | `deply.yaml` | Configuration file passed as `--config` to both commands |
+| `config` | empty | When set, passes `--config=<path>` to both commands; otherwise Deply discovers `deply.yaml` or `pyproject.toml` |
 | `report-format` | `github-actions` | Report format for `deply analyze`; the default reports violations as annotations |
 | `baseline` | empty | When set, passes `--baseline=<path>` to `deply analyze` |
 | `args` | empty | Extra arguments appended to `deply analyze`, split on whitespace |
@@ -187,7 +201,7 @@ Inspect one existing Python file before editing:
 deply context --file src/orders/service.py --config deply.yaml --report-format=json
 ```
 
-`--file` is required. `--config` defaults to `deply.yaml`; `--report-format` defaults
+`--file` is required. `--config` follows the same discovery as `analyze`; `--report-format` defaults
 to `json`, the only supported format. Paths supplied on the CLI and paths inside
 the config resolve from the working directory, just as for `analyze`. Check
 `deply context --help` first: this command requires Deply v1.3.0 or later.

@@ -11,7 +11,8 @@ This guide explains how to configure Deply for your project.
 
 ## Configuration File Structure
 
-The configuration file (`deply.yaml`) has the following structure:
+Deply reads its configuration from `deply.yaml` or from a `[tool.deply]` table in
+`pyproject.toml`. The configuration file (`deply.yaml`) has the following structure:
 
 ```yaml
 deply:
@@ -32,6 +33,36 @@ deply:
       disallow_layer_dependencies:
         - other_layer_name
 ```
+
+## Using pyproject.toml
+
+`pyproject.toml` configuration is available starting with Deply v1.3.2. Projects that
+keep tool settings in `pyproject.toml` can define the same structure under `[tool.deply]`. The table maps one-to-one to the content of the `deply:` key:
+
+```toml
+[tool.deply]
+paths = ["/path/to/your/project"]
+exclude_files = ['.*\.venv/.*']
+
+[[tool.deply.layers]]
+name = "layer_name"
+
+[[tool.deply.layers.collectors]]
+type = "collector_type"
+# collector specific configuration
+
+[tool.deply.ruleset.layer_name]
+disallow_layer_dependencies = ["other_layer_name"]
+```
+
+When `--config` is omitted, Deply uses `deply.yaml` if it exists, otherwise
+`pyproject.toml` when it contains a `[tool.deply]` table. Reading `pyproject.toml`
+uses the standard library `tomllib`, so it requires Python 3.11 or newer; on older
+interpreters a discovered or explicit `pyproject.toml` fails with an explicit error,
+so create `deply.yaml` there.
+
+Use TOML literal strings (single quotes) for regular expressions so backslashes
+need no escaping.
 
 ## Layer Definitions
 
@@ -109,7 +140,7 @@ Run `deply validate` to check configuration syntax and schema without analyzing 
 deply validate --config=deply.yaml
 ```
 
-The command checks YAML parsing, supported top-level and collector keys, analysis
+The command checks YAML or TOML parsing, supported top-level and collector keys, analysis
 directories, `element_type` values, regex validity, layer names, collector
 settings, rule settings, and references between rules and layers. It exits with
 status `0` when the configuration is valid and `1` when validation errors are
