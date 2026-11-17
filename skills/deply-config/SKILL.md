@@ -3,7 +3,7 @@ name: deply-config
 description: Use when creating, auditing, validating, or integrating Deply architecture configuration for Python projects, or inspecting file architecture context before code edits, including deply.yaml, light/medium/strict guidance, monorepos, CI, Makefiles, and architecture documentation.
 license: MIT
 metadata:
-  version: "1.3.1"
+  version: "1.3.2"
 ---
 
 # Deply Config
