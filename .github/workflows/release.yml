@@ -281,7 +281,15 @@ jobs:
           git fetch --force --tags origin
           PROMOTED_RELEASE_TAG=""
           if git rev-parse -q --verify "refs/tags/${MAJOR_TAG}" > /dev/null; then
-            PROMOTED_VERSION=$(git show "refs/tags/${MAJOR_TAG}^{commit}:deply/__init__.py" | sed -nE "s/.*__version__ = '([^']+)'.*/\1/p" | head -n 1)
+            PROMOTED_INIT_CONTENT=$(git show "refs/tags/${MAJOR_TAG}^{commit}:deply/__init__.py")
+            PROMOTED_VERSION=$(PROMOTED_INIT_CONTENT="${PROMOTED_INIT_CONTENT}" python3 - <<'PY'
+          import os
+          import re
+
+          version_match = re.search(r"__version__ = '([^']+)'", os.environ["PROMOTED_INIT_CONTENT"])
+          print(version_match.group(1) if version_match else "")
+          PY
+          )
             if [[ ! "${PROMOTED_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
               echo "Unable to read a stable version from ${MAJOR_TAG}. Got: '${PROMOTED_VERSION}'"
               exit 1
