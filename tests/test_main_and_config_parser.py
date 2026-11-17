@@ -130,6 +130,26 @@ class TestMainAndConfigParser(unittest.TestCase):
         self.assertEqual(parsed_configuration["layers"], [])
         self.assertEqual(parsed_configuration["ruleset"], {})
 
+    def test_config_parser_treats_empty_yaml_as_defaults(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            configuration_path = Path(temporary_directory) / "deply.yaml"
+            configuration_path.write_text("")
+
+            parsed_configuration = ConfigParser(configuration_path).parse()
+
+        self.assertEqual(parsed_configuration["paths"], [str(configuration_path.parent)])
+        self.assertEqual(parsed_configuration["layers"], [])
+
+    def test_config_parser_rejects_non_mapping_yaml_root(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            configuration_path = Path(temporary_directory) / "deply.yaml"
+            configuration_path.write_text(yaml.dump(["deply"]))
+
+            with self.assertRaises(ValueError) as context:
+                ConfigParser(configuration_path).parse()
+
+        self.assertIn("Invalid YAML root type", str(context.exception))
+
     def test_config_parser_rejects_invalid_deply_root(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             configuration_path = Path(temporary_directory) / "deply.yaml"

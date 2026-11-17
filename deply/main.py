@@ -6,10 +6,12 @@ from typing import Optional
 
 import yaml
 from deply import __version__
-from deply.config_parser import ConfigParser
+from deply.config_parser import ConfigParser, discover_config_path
 from deply.config_validator import ConfigValidator
 from deply.deply_runner import DeplyRunner
 from deply.reports.report_generator import ReportGenerator
+
+CONFIG_HELP = "Path to the configuration file; defaults to deply.yaml, then pyproject.toml [tool.deply]"
 
 
 def validate_configuration(
@@ -50,7 +52,7 @@ def main():
     parser.add_argument('-v', '--verbose', action='count', default=1, help='Increase output verbosity')
     subparsers = parser.add_subparsers(dest='command', help='Sub-commands')
     parser_analyze = subparsers.add_parser('analyze', help='Analyze the project')
-    parser_analyze.add_argument('--config', type=str, default="deply.yaml", help="Path to the configuration YAML file")
+    parser_analyze.add_argument('--config', type=str, default=None, help=CONFIG_HELP)
     parser_analyze.add_argument(
         '--report-format',
         type=str,
@@ -83,10 +85,10 @@ def main():
              "If no number is provided, all available CPU cores will be used."
     )
     parser_validate = subparsers.add_parser('validate', help='Validate the configuration file')
-    parser_validate.add_argument('--config', type=str, default="deply.yaml", help="Path to the configuration YAML file")
+    parser_validate.add_argument('--config', type=str, default=None, help=CONFIG_HELP)
     parser_context = subparsers.add_parser('context', help='Show architecture context for one Python file')
     parser_context.add_argument('--file', dest='context_file', type=Path, required=True, help='Python file to inspect')
-    parser_context.add_argument('--config', default='deply.yaml', help='Path to the configuration YAML file')
+    parser_context.add_argument('--config', default=None, help=CONFIG_HELP)
     parser_context.add_argument('--report-format', choices=['json'], default='json', help='Format of the context report')
     parser_context.set_defaults(parallel=None, output=None, mermaid=False, baseline=None, write_baseline=None,
                                 max_violations=0)
@@ -100,6 +102,9 @@ def main():
 
     if args.command is None:
         args = parser.parse_args(['analyze'] + sys.argv[1:])  # pragma: no mutate
+
+    if args.config is None:
+        args.config = str(discover_config_path(Path()))
 
     log_level = logging.WARNING
     if args.verbose == 1:
