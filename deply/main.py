@@ -136,6 +136,12 @@ def main():
     if args.command is None:
         args = parser.parse_args(['analyze'] + sys.argv[1:])  # pragma: no mutate
 
+    if args.command == "init":
+        if args.list_presets:
+            print("\n".join(available_presets()))
+            sys.exit(0)
+        sys.exit(0 if initialize_configuration(args.preset, args.output, args.force) else 1)
+
     if args.config is None:
         args.config = str(discover_config_path(Path()))
 
@@ -150,12 +156,6 @@ def main():
         format='[%(asctime)s] [%(levelname)s] %(message)s',  # pragma: no mutate
         datefmt='%Y-%m-%d %H:%M:%S'  # pragma: no mutate
     )
-
-    if args.command == "init":
-        if args.list_presets:
-            print("\n".join(available_presets()))
-            sys.exit(0)
-        sys.exit(0 if initialize_configuration(args.preset, args.output, args.force) else 1)
 
     if args.command == "validate":
         sys.exit(0 if validate_configuration(args.config) else 1)
