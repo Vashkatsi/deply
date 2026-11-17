@@ -207,7 +207,7 @@ The context schema is separate from the `analyze` schema; its initial
 |---|---|
 | `status` | `complete` or `incomplete` for the full configured analysis; neither means runtime completeness or absence of violations. |
 | `errors` | Sorted `{code: "incomplete_analysis", message: "..."}` diagnostics, empty on complete analysis. |
-| `file` | Canonical selected path, relative to the config directory, using `/` separators; cross-drive paths fall back to a file URI. |
+| `file` | Canonical selected path, relative to the working directory, using `/` separators; files outside the working directory use the absolute resolved path, never `../` segments. |
 | `file_status` | File availability and membership, listed below. |
 | `elements` | Collected definitions in the selected file: `{file, name, type, line, column, layers}` with every matching layer. Uncollected definitions are not listed. |
 | `rules` | Effective constraints owned by selected layers, plus dependency restrictions from other layers that forbid selected layers. Each record contains `{rule_id, source_layer, kind, configuration}`. |
@@ -233,10 +233,13 @@ currently exists. Repeated identical configured rules appear once per `rule_id`.
 
 Output ordering is deterministic for unchanged inputs: elements by location/name/
 type, rules by ID, edges by their canonical JSON representation, and violations
-by the existing analysis ordering. Element and endpoint paths use the config
-directory as their root. Violation records preserve the analysis contract,
-including its legacy `file` field; use `source.file` and `target.file` for normalized
-identities. These guarantee compatible fingerprints without rewriting baselines.
+by the existing analysis ordering. Element and endpoint paths follow the same
+working-directory contract as `file`, so they map directly onto the working tree
+even when the config lives outside the project. Violation records preserve the
+analysis contract, including its legacy `file` field; use `source.file` and
+`target.file` for normalized identities. These remain relative to the config
+directory and guarantee compatible fingerprints without rewriting baselines, so they
+only match element paths when the config directory is the working directory.
 
 | `file_status` | Meaning |
 |---|---|
@@ -428,7 +431,9 @@ existing `--max-violations` thresholds against the corrected totals.
 - `source` and internal `target` contain `file`, `name`, and `type`. Names
   preserve collected qualified names, including enclosing scopes where available.
   Paths use forward slashes and are relative to the configuration directory;
-  files outside it use `../` segments. On Windows, files on a different drive
+  files outside it use `../` segments. These are identity inputs, not display
+  paths: `context` reports `file` and element paths relative to the working
+  directory instead. On Windows, files on a different drive
   use absolute `file:` URIs, whose fingerprints depend on that drive/path.
   Run with a configuration in the same relative location across checkouts to
   retain identity.
