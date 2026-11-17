@@ -111,6 +111,10 @@ class TestInitCommand(unittest.TestCase):
         self.assertFalse((self.root / "deply.yaml").exists())
 
     def test_init_rejects_unknown_preset_and_missing_selection(self):
-        self.assertEqual(run_cli("init", "--preset", "unknown")[0], 2)
-        self.assertEqual(run_cli("init")[0], 2)
+        exit_code, _, error = run_cli("init", "--preset", "unknown")
+        self.assertEqual(exit_code, 2)
+        self.assertIn("invalid choice: 'unknown'", error)
+        exit_code, _, error = run_cli("init")
+        self.assertEqual(exit_code, 2)
+        self.assertIn("one of the arguments --preset --list-presets is required", error)
         self.assertFalse((self.root / "deply.yaml").exists())
