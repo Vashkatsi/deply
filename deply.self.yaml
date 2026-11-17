@@ -1,0 +1,129 @@
+deply:
+  paths:
+    - deply
+
+  layers:
+    - name: models
+      collectors:
+        - type: directory
+          directories:
+            - models
+
+    - name: collectors
+      collectors:
+        - type: directory
+          directories:
+            - collectors
+
+    - name: rules
+      collectors:
+        - type: directory
+          directories:
+            - rules
+
+    - name: reports
+      collectors:
+        - type: directory
+          directories:
+            - reports
+
+    - name: diagrams
+      collectors:
+        - type: directory
+          directories:
+            - diagrams
+
+    - name: utils
+      collectors:
+        - type: directory
+          directories:
+            - utils
+
+    - name: cli
+      collectors:
+        - type: file_regex
+          regex: "^(__main__|main)\\.py$"
+
+    - name: orchestration
+      collectors:
+        - type: file_regex
+          regex: "^(deply_runner|code_analyzer|config_parser|config_validator|baseline)\\.py$"
+
+  ruleset:
+    models:
+      disallow_layer_dependencies:
+        - collectors
+        - rules
+        - reports
+        - diagrams
+        - utils
+        - cli
+        - orchestration
+      disallow_external_imports:
+        - argparse
+        - yaml
+
+    collectors:
+      disallow_layer_dependencies:
+        - rules
+        - reports
+        - diagrams
+        - cli
+        - orchestration
+      disallow_external_imports:
+        - argparse
+        - yaml
+
+    rules:
+      disallow_layer_dependencies:
+        - collectors
+        - reports
+        - diagrams
+        - utils
+        - cli
+        - orchestration
+      disallow_external_imports:
+        - argparse
+        - yaml
+
+    reports:
+      disallow_layer_dependencies:
+        - collectors
+        - diagrams
+        - utils
+        - cli
+        - orchestration
+      disallow_external_imports:
+        - argparse
+        - yaml
+
+    diagrams:
+      disallow_layer_dependencies:
+        - models
+        - collectors
+        - rules
+        - reports
+        - utils
+        - cli
+        - orchestration
+      disallow_external_imports:
+        - argparse
+        - yaml
+
+    utils:
+      disallow_layer_dependencies:
+        - collectors
+        - rules
+        - reports
+        - diagrams
+        - cli
+        - orchestration
+      disallow_external_imports:
+        - argparse
+        - yaml
+
+    orchestration:
+      disallow_layer_dependencies:
+        - cli
+      disallow_external_imports:
+        - argparse

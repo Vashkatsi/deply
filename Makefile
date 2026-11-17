@@ -5,12 +5,13 @@ PIP_AUDIT := ./.venv/bin/pip-audit
 PRE_COMMIT := ./.venv/bin/pre-commit
 MUTMUT := ./.venv/bin/mutmut
 
-.PHONY: help venv-check lint typing security test mutation pre-commit check
+.PHONY: help venv-check lint typing security test architecture mutation pre-commit check
 
 help:
 	@echo "Available targets:"
-	@echo "  make check       - Run lint, typing, security, test"
+	@echo "  make check       - Run lint, typing, security, test, architecture"
 	@echo "  make test        - Run unit tests"
+	@echo "  make architecture - Run Deply on its own code"
 	@echo "  make mutation    - Run mutation tests"
 	@echo "  make lint        - Run ruff"
 	@echo "  make typing      - Run mypy"
@@ -37,6 +38,9 @@ security: venv-check
 test: venv-check
 	$(PYTHON) -m unittest discover tests
 
+architecture: venv-check
+	$(PYTHON) -m deply analyze --config deply.self.yaml
+
 mutation: venv-check
 	$(MUTMUT) run
 	$(MUTMUT) export-cicd-stats
@@ -45,4 +49,4 @@ mutation: venv-check
 pre-commit: venv-check
 	$(PRE_COMMIT) run --all-files
 
-check: lint typing security test
+check: lint typing security test architecture

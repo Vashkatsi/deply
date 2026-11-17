@@ -33,6 +33,13 @@ deply validate --config=deply.yaml
 deply analyze
 ```
 
+`python -m deply` is equivalent to the `deply` command, which helps when the console script is not on `PATH`:
+
+```bash
+deply analyze
+python -m deply analyze
+```
+
 You can also use the [Deply Config Agent Skill](skills.html) with Codex, Claude Code, or another Agent Skills-compatible assistant to generate the configuration interactively.
 
 ## Configuration

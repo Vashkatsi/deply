@@ -1,0 +1,55 @@
+name: Deply
+description: Check Python architecture rules with Deply.
+branding:
+  icon: layers
+  color: blue
+
+inputs:
+  config:
+    description: Path to the Deply configuration file.
+    required: false
+    default: deply.yaml
+  args:
+    description: Extra whitespace-separated arguments appended to deply analyze.
+    required: false
+    default: ""
+  python-version:
+    description: Python version used to install and run Deply.
+    required: false
+    default: "3.x"
+  baseline:
+    description: Optional path to an accepted violation baseline.
+    required: false
+    default: ""
+  report-format:
+    description: Report format for deply analyze.
+    required: false
+    default: github-actions
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install Deply
+      shell: bash
+      run: python -m pip install "${{ github.action_path }}"
+
+    - name: Validate configuration
+      shell: bash
+      env:
+        DEPLY_CONFIG: ${{ inputs.config }}
+      run: deply validate --config="$DEPLY_CONFIG"
+
+    - name: Analyze architecture
+      shell: bash
+      env:
+        DEPLY_CONFIG: ${{ inputs.config }}
+        DEPLY_REPORT_FORMAT: ${{ inputs.report-format }}
+        DEPLY_BASELINE: ${{ inputs.baseline }}
+        DEPLY_ARGS: ${{ inputs.args }}
+      run: >-
+        deply analyze --config="$DEPLY_CONFIG" --report-format="$DEPLY_REPORT_FORMAT"
+        ${DEPLY_BASELINE:+"--baseline=$DEPLY_BASELINE"} $DEPLY_ARGS

@@ -1,0 +1,15 @@
+- id: deply
+  name: deply analyze
+  description: Check architecture rules with Deply.
+  entry: deply analyze
+  language: python
+  types: [python]
+  pass_filenames: false
+
+- id: deply-validate
+  name: deply validate
+  description: Validate the Deply configuration.
+  entry: deply validate
+  language: python
+  files: '(^|/)deply\.ya?ml$'
+  pass_filenames: false
