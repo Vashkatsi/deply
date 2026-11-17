@@ -235,7 +235,9 @@ Output ordering is deterministic for unchanged inputs: elements by location/name
 type, rules by ID, edges by their canonical JSON representation, and violations
 by the existing analysis ordering. Element and endpoint paths follow the same
 working-directory contract as `file`, so they map directly onto the working tree
-even when the config lives outside the project. Violation records preserve the
+even when the config lives outside the project. Starting with Deply v1.3.2 these
+paths are relative to the working directory; earlier versions reported them
+relative to the config directory. Violation records preserve the
 analysis contract, including its legacy `file` field; use `source.file` and
 `target.file` for normalized identities. These remain relative to the config
 directory and guarantee compatible fingerprints without rewriting baselines, so they

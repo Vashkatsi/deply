@@ -248,8 +248,9 @@ class TestContext(unittest.TestCase):
         self.assertEqual(len(report["baseline"]["existing"]), len(written["violations"]))
         self.assertEqual(report["baseline"]["new"], [])
         _, context = self.run_cli()
-        self.assertEqual({item["fingerprint"] for item in context["violations"]}
-                         <= {item["fingerprint"] for item in written["violations"]}, True)
+        self.assertTrue(context["violations"])
+        self.assertLessEqual({item["fingerprint"] for item in context["violations"]},
+                             {item["fingerprint"] for item in written["violations"]})
 
     def test_included_path_wins_over_exclusion_in_overlapping_roots(self):
         self.configuration["deply"]["paths"] = [str(self.root), str(self.source_root)]
