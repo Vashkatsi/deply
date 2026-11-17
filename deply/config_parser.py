@@ -8,7 +8,8 @@ import yaml
 YAML_CONFIG_FILE = "deply.yaml"
 PYPROJECT_FILE = "pyproject.toml"
 TOML_UNSUPPORTED_MESSAGE = (
-    "Reading pyproject.toml requires Python 3.11 or newer; use deply.yaml on older Python versions"
+    "Reading pyproject.toml requires Python 3.11 or newer; "
+    "create deply.yaml to configure Deply on older Python versions"
 )
 
 
@@ -17,19 +18,19 @@ def discover_config_path(directory: Path) -> Path:
     if yaml_path.exists():
         return yaml_path
     pyproject_path = directory / PYPROJECT_FILE
-    if pyproject_path.exists() and _declares_deply_table(pyproject_path):
+    if pyproject_path.exists() and _may_configure_deply(pyproject_path):
         return pyproject_path
     return yaml_path
 
 
-def _declares_deply_table(pyproject_path: Path) -> bool:
+def _may_configure_deply(pyproject_path: Path) -> bool:
     toml_parser = _import_toml_parser()
     if toml_parser is None:
-        return False
+        return True
     try:
         return _read_tool_table(toml_parser, pyproject_path) is not None
     except (OSError, ValueError):
-        return False
+        return True
 
 
 def _import_toml_parser() -> Optional[ModuleType]:

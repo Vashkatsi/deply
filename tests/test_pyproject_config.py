@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import tempfile
@@ -99,25 +100,34 @@ class TestPyprojectConfig(unittest.TestCase):
 
         self.assertEqual(discover_config_path(self.project_path), self.pyproject_path)
 
+    @unittest.skipUnless(TOML_SUPPORTED, "tomllib requires Python 3.11+")
     def test_discovery_falls_back_to_yaml_without_deply_table(self):
-        for pyproject_text in [PYPROJECT_WITHOUT_DEPLY_TEXT, "tool = 1\n", "[tool\n"]:
+        for pyproject_text in [PYPROJECT_WITHOUT_DEPLY_TEXT, "tool = 1\n"]:
             with self.subTest(pyproject_text=pyproject_text):
                 self.pyproject_path.write_text(pyproject_text)
                 self.assertEqual(discover_config_path(self.project_path), self.yaml_path)
 
-    def test_discovery_falls_back_to_yaml_when_pyproject_is_unreadable(self):
+    @unittest.skipUnless(TOML_SUPPORTED, "tomllib requires Python 3.11+")
+    def test_discovery_keeps_malformed_pyproject_so_parse_reports_it(self):
+        self.pyproject_path.write_text('[tool.deply]\nexclude_files = [".*\\.venv/.*"]\n')
+
+        self.assertEqual(discover_config_path(self.project_path), self.pyproject_path)
+        with self.assertRaises(ValueError):
+            ConfigParser(self.pyproject_path).parse()
+
+    def test_discovery_keeps_unreadable_pyproject_so_parse_reports_it(self):
         self.pyproject_path.mkdir()
 
-        self.assertEqual(discover_config_path(self.project_path), self.yaml_path)
+        self.assertEqual(discover_config_path(self.project_path), self.pyproject_path)
 
     def test_discovery_falls_back_to_yaml_without_any_config(self):
         self.assertEqual(discover_config_path(self.project_path), self.yaml_path)
 
-    def test_discovery_ignores_pyproject_without_tomllib(self):
+    def test_discovery_keeps_pyproject_without_tomllib(self):
         self.pyproject_path.write_text(PYPROJECT_TEXT)
 
         with patch.dict(sys.modules, {"tomllib": None}):
-            self.assertEqual(discover_config_path(self.project_path), self.yaml_path)
+            self.assertEqual(discover_config_path(self.project_path), self.pyproject_path)
 
     def test_parse_rejects_pyproject_without_tomllib(self):
         self.pyproject_path.write_text(PYPROJECT_TEXT)
@@ -189,6 +199,30 @@ class TestPyprojectConfig(unittest.TestCase):
         self.assertEqual(exit_code, 1)
         self.assertIn("has no [tool.deply] table", error_output)
 
+    @unittest.skipUnless(TOML_SUPPORTED, "tomllib requires Python 3.11+")
+    def test_validate_without_flags_uses_pyproject(self):
+        self.pyproject_path.write_text(NAMING_PYPROJECT_TEXT)
+        self._change_directory(self.project_path)
+
+        exit_code, output, _ = self._run_cli(["validate"])
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("Configuration is valid: pyproject.toml", output)
+
+    @unittest.skipUnless(TOML_SUPPORTED, "tomllib requires Python 3.11+")
+    def test_context_without_flags_uses_pyproject(self):
+        self.pyproject_path.write_text(NAMING_PYPROJECT_TEXT)
+        (self.project_path / "app.py").write_text("class Expected: pass\n")
+        self._change_directory(self.project_path)
+
+        exit_code, output, error_output = self._run_cli(["context", "--file", "app.py"])
+
+        self.assertEqual(exit_code, 0, error_output)
+        payload = json.loads(output)
+        self.assertEqual(payload["file_status"], "mapped")
+        self.assertEqual(payload["elements"][0]["layers"], ["app"])
+
+    @unittest.skipUnless(TOML_SUPPORTED, "tomllib requires Python 3.11+")
     def test_analyze_without_any_config_reports_missing_yaml(self):
         self.pyproject_path.write_text(PYPROJECT_WITHOUT_DEPLY_TEXT)
         self._change_directory(self.project_path)
@@ -197,6 +231,16 @@ class TestPyprojectConfig(unittest.TestCase):
 
         self.assertEqual(exit_code, 1)
         self.assertIn("deply.yaml", error_output)
+
+    def test_analyze_without_flags_reports_unsupported_python_for_pyproject(self):
+        self.pyproject_path.write_text(PYPROJECT_TEXT)
+        self._change_directory(self.project_path)
+
+        with patch.dict(sys.modules, {"tomllib": None}):
+            exit_code, _, error_output = self._run_cli(["analyze"])
+
+        self.assertEqual(exit_code, 1)
+        self.assertIn(TOML_UNSUPPORTED_MESSAGE, error_output)
 
 
 if __name__ == "__main__":
