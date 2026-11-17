@@ -23,12 +23,22 @@ class ContextReport:
         self.rules = rules
         self.violations = violations
         self.serializer = ViolationSerializer(root)
+        self.working_directory = Path.cwd().resolve()
         self.metrics = metrics
         self.errors = errors
 
+    def _display_path(self, file: Path) -> str:
+        resolved_file = file.resolve()
+        try:
+            return resolved_file.relative_to(self.working_directory).as_posix()
+        except ValueError:
+            return resolved_file.as_posix()
+
     def _element(self, element: CodeElement) -> Dict[str, Any]:
-        return dict(self.serializer.element_identity(element), line=element.line, column=element.column,
-                    layers=sorted(self.memberships.get(element, set())))
+        return {
+            "file": self._display_path(element.file), "name": element.name, "type": element.element_type,
+            "line": element.line, "column": element.column, "layers": sorted(self.memberships.get(element, set())),
+        }
 
     def generate(self) -> str:
         elements = [self._element(element) for element in self.memberships if element.file.resolve() == self.file]
@@ -66,7 +76,7 @@ class ContextReport:
             "schema_version": 1,
             "status": "incomplete" if self.errors else "complete",
             "errors": [{"code": "incomplete_analysis", "message": error} for error in sorted(self.errors)],
-            "file": self.serializer.relative_path(self.file),
+            "file": self._display_path(self.file),
             "file_status": self.file_status,
             "elements": sorted(elements, key=lambda element: (element["line"], element["column"], element["name"], element["type"])),
             "rules": sorted(rules.values(), key=lambda rule: rule["rule_id"]),
