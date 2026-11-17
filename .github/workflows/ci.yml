@@ -94,7 +94,7 @@ jobs:
           pip-audit -r requirements.txt
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build
     strategy:
       fail-fast: false
