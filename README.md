@@ -177,7 +177,7 @@ Run Deply in GitHub Actions with violations reported as annotations:
 
 ```yaml
 - uses: actions/checkout@v4
-- uses: Vashkatsi/deply@v1.3.2
+- uses: Vashkatsi/deply@v1
   with:
     config: deply.yaml
 ```

@@ -185,7 +185,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Vashkatsi/deply@v1.3.2
+      - uses: Vashkatsi/deply@v1
         with:
           config: deply.yaml
           baseline: deply-baseline.json
@@ -209,8 +209,9 @@ To upload SARIF to GitHub Code Scanning instead of annotations, use the
 
 Reference the action by one of:
 
-- `@main`: the current default branch.
+- `@v1`: the latest stable v1 release; the release workflow moves this tag on each stable release.
 - A release tag such as `@v1.3.2`: a fixed version.
+- `@main`: the current default branch.
 
 ### Other CI systems
 
