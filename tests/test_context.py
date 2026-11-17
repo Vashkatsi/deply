@@ -17,8 +17,11 @@ class TestContext(unittest.TestCase):
     def setUp(self):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
-        self.root = Path(directory.name)
+        self.root = Path(directory.name).resolve()
         self.source_root = self.root / "src"
+        self.repository = os.getcwd()
+        self.addCleanup(os.chdir, self.repository)
+        os.chdir(self.root)
         self.source_root.mkdir()
         self.config = self.root / "deply.yaml"
         self.selected = self.source_root / "service.py"
@@ -205,6 +208,49 @@ class TestContext(unittest.TestCase):
         _, linked = self.run_cli(alias)
         self.assertEqual(original, linked)
 
+    def test_paths_are_relative_to_working_directory_not_config_directory(self):
+        config_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(config_directory.cleanup)
+        self.addCleanup(os.chdir, self.root)
+        self.config = Path(config_directory.name).resolve() / "deply.yaml"
+
+        result, report = self.run_cli()
+        self.assertEqual(result, 0)
+        self.assertEqual(report["file"], "src/service.py")
+        self.assertEqual({element["file"] for element in report["elements"]}, {"src/service.py"})
+        self.assertEqual({edge["source"]["file"] for edge in report["incoming"]}, {"src/caller.py"})
+        self.assertEqual({edge["target"]["file"] for edge in report["outgoing"]}, {"src/store.py"})
+        self.assertTrue(report["violations"])
+        self.assertTrue(all(item["source"]["file"].startswith("../") for item in report["violations"]))
+
+        os.chdir(config_directory.name)
+        result, report = self.run_cli()
+        self.assertEqual(result, 0)
+        self.assertEqual(report["file"], self.selected.as_posix())
+        self.assertTrue(Path(report["file"]).is_absolute())
+        self.assertEqual({element["file"] for element in report["elements"]}, {self.selected.as_posix()})
+        self.assertEqual({edge["source"]["file"] for edge in report["incoming"]},
+                         {(self.source_root / "caller.py").as_posix()})
+
+    def test_baseline_fingerprints_ignore_working_directory_with_external_config(self):
+        config_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(config_directory.cleanup)
+        self.addCleanup(os.chdir, self.root)
+        self.config = Path(config_directory.name).resolve() / "deply.yaml"
+        baseline = self.config.parent / "baseline.json"
+        result, written = self.run_cli(command="analyze", extra=("--write-baseline", str(baseline)))
+        self.assertEqual(result, 0)
+        self.assertTrue(written["violations"])
+
+        os.chdir(config_directory.name)
+        result, report = self.run_cli(command="analyze", extra=("--baseline", str(baseline)))
+        self.assertEqual(result, 0)
+        self.assertEqual(len(report["baseline"]["existing"]), len(written["violations"]))
+        self.assertEqual(report["baseline"]["new"], [])
+        _, context = self.run_cli()
+        self.assertEqual({item["fingerprint"] for item in context["violations"]}
+                         <= {item["fingerprint"] for item in written["violations"]}, True)
+
     def test_included_path_wins_over_exclusion_in_overlapping_roots(self):
         self.configuration["deply"]["paths"] = [str(self.root), str(self.source_root)]
         self.configuration["deply"]["exclude_files"] = ["^src/"]
@@ -246,7 +292,8 @@ class TestContext(unittest.TestCase):
             result = subprocess.run(
                 [sys.executable, "-m", "deply.main", "context", "--config", str(self.config),
                  "--file", str(self.selected)],
-                env=dict(os.environ, PYTHONHASHSEED=seed), capture_output=True, text=True, check=True,
+                env=dict(os.environ, PYTHONHASHSEED=seed), cwd=self.repository,
+                capture_output=True, text=True, check=True,
             )
             outputs.append(result.stdout)
         self.assertEqual(outputs[0], outputs[1])
