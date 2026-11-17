@@ -44,7 +44,7 @@ You can also use the [Deply Config Agent Skill](skills.html) with Codex, Claude 
 
 ## Configuration
 
-Before running the tool, you need to create a configuration file that specifies the rules and target files to enforce. The configuration file should be named `deply.yaml` by default, but you can specify a different name using the `--config` option.
+Before running the tool, you need to create a configuration file that specifies the rules and target files to enforce. The configuration file should be named `deply.yaml` by default, but you can specify a different name using the `--config` option. Starting with Deply v1.3.2 on Python 3.11+, the same configuration can live in a `[tool.deply]` table in `pyproject.toml`; see [Using pyproject.toml](configuration.html#using-pyprojecttoml).
 
 ### Basic Configuration Example
 

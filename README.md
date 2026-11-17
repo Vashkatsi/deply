@@ -21,7 +21,7 @@ You can install Deply via pip:
 pip install deply
 ```
 
-Once you have installed Deply, you will need to create a configuration file, where you define your layers and communication ruleset. Deply reads it from `deply.yaml` in your project's root directory, or from a `[tool.deply]` table in `pyproject.toml` (Python 3.11+).
+Once you have installed Deply, you will need to create a configuration file, where you define your layers and communication ruleset. Deply reads it from `deply.yaml` in your project's root directory, or from a `[tool.deply]` table in `pyproject.toml` (Python 3.11+, available starting with Deply v1.3.2).
 
 When you have this file, you can analyse your code by running the analyze command:
 

@@ -24,7 +24,7 @@ Use this skill to create or audit a production-ready `deply.yaml` for a Python p
    - CI rollout: fail immediately or explicitly accept reviewed debt in a baseline; check CLI support first.
 3. Read the needed references:
    - `references/discovery.md` first for deterministic repository inspection before asking questions.
-   - `references/deply-v1-schema.md` for exact Deply v1.3.1 YAML, collectors, rules, and validation constraints.
+   - `references/deply-v1-schema.md` for exact Deply v1 YAML, the v1.3.2+ `pyproject.toml` form, collectors, rules, and validation constraints.
    - `references/architecture-recipes.md` when choosing a target architecture style.
    - `references/presets.md` for `light`, `medium`, and `strict` Agent Skill profiles.
    - `references/framework-presets.md` for Agent Skill guidance when the repo uses Django, FastAPI, Flask, Celery, or SQLAlchemy.

@@ -61,6 +61,7 @@ deply --help
 
 ### Configuration File Discovery
 
+`pyproject.toml` configuration is available starting with Deply v1.3.2.
 When `--config` is omitted, every command resolves the configuration file in this order:
 
 1. `deply.yaml` in the working directory.
@@ -69,8 +70,8 @@ When `--config` is omitted, every command resolves the configuration file in thi
 
 A `--config` path ending in `.toml` is read as `pyproject.toml` with a `[tool.deply]`
 table. TOML support uses the standard library `tomllib` and requires Python 3.11 or
-newer; older interpreters read `deply.yaml` only and reject a TOML path with an explicit
-error. See [Using pyproject.toml](configuration.html#using-pyprojecttoml).
+newer; on older interpreters a discovered or explicit `pyproject.toml` fails with an
+explicit error, so create `deply.yaml` there. See [Using pyproject.toml](configuration.html#using-pyprojecttoml).
 
 ## Examples
 

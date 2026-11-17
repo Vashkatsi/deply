@@ -32,8 +32,9 @@ Run commands from the project root when using relative paths.
 
 ## pyproject.toml Form
 
-When the project keeps tool settings in `pyproject.toml` and runs on Python 3.11 or
-newer, the same configuration may live under `[tool.deply]`. The table maps
+Requires Deply v1.3.2 or later; check `deply --version` first and generate `deply.yaml`
+on older versions. When the project keeps tool settings in `pyproject.toml` and runs on
+Python 3.11 or newer, the same configuration may live under `[tool.deply]`. The table maps
 one-to-one to the content of the `deply:` key; use TOML literal strings (single
 quotes) for regexes:
 

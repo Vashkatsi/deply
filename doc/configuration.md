@@ -36,8 +36,8 @@ deply:
 
 ## Using pyproject.toml
 
-Projects that keep tool settings in `pyproject.toml` can define the same structure
-under `[tool.deply]`. The table maps one-to-one to the content of the `deply:` key:
+`pyproject.toml` configuration is available starting with Deply v1.3.2. Projects that
+keep tool settings in `pyproject.toml` can define the same structure under `[tool.deply]`. The table maps one-to-one to the content of the `deply:` key:
 
 ```toml
 [tool.deply]
@@ -58,8 +58,8 @@ disallow_layer_dependencies = ["other_layer_name"]
 When `--config` is omitted, Deply uses `deply.yaml` if it exists, otherwise
 `pyproject.toml` when it contains a `[tool.deply]` table. Reading `pyproject.toml`
 uses the standard library `tomllib`, so it requires Python 3.11 or newer; on older
-interpreters Deply reads `deply.yaml` only and rejects a TOML `--config` path with
-an explicit error.
+interpreters a discovered or explicit `pyproject.toml` fails with an explicit error,
+so create `deply.yaml` there.
 
 Use TOML literal strings (single quotes) for regular expressions so backslashes
 need no escaping.
