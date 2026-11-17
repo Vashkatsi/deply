@@ -34,6 +34,24 @@ Validate your configuration without analyzing project files:
 deply validate
 ```
 
+### Init Command
+
+Write a validated starter configuration from a packaged preset:
+
+```bash
+deply init --preset fastapi
+```
+
+Check `deply init --help` first: this command requires a Deply release newer
+than v1.3.1. Presets are `layered`, `django`, `fastapi`, and `flask`, derived
+from the documented recipes. The written file is validated before it is
+created; validation errors exit `1` and write nothing. An existing output file
+is never overwritten without `--force` and exits `1`. `--paths` replaces only
+the `paths` list. `directory` collectors resolve relative to those paths, so
+with `--paths src` the preset's `src/app/domain` would be looked up as
+`src/src/app/domain`: rewrite the layer directories relative to the new paths
+after generation.
+
 ### Help Command
 
 Display help information:
@@ -73,6 +91,14 @@ table. TOML support uses the standard library `tomllib` and requires Python 3.11
 newer; on older interpreters a discovered or explicit `pyproject.toml` fails with an
 explicit error, so create `deply.yaml` there. See [Using pyproject.toml](configuration.html#using-pyprojecttoml).
 
+### Init Command Options
+
+- `--preset`: Preset to write (choices: `layered`, `django`, `fastapi`, `flask`); mutually exclusive with `--list-presets`
+- `--list-presets`: Print the available preset names, one per line, and exit
+- `--output`: Configuration file to create (default: `deply.yaml`)
+- `--paths`: One or more analysis paths written to the configuration (default: `.`); they must exist
+- `--force`: Overwrite an existing configuration file
+
 ## Examples
 
 ### Basic Analysis
@@ -91,6 +117,13 @@ deply analyze --config=custom_config.yaml
 
 ```bash
 deply validate --config=custom_config.yaml
+```
+
+### Create a Starter Configuration
+
+```bash
+deply init --list-presets
+deply init --preset django --output config/deply.yaml
 ```
 
 ### Generate GitHub Actions Report

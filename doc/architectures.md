@@ -9,7 +9,8 @@ has_children: true
 # Architecture and Pattern Recipes
 
 These recipes show how to express common source-code boundaries with Deply.
-They are editable starting points, not built-in presets. Architecture styles
+They are editable starting points; only the layered recipe also ships as a
+`deply init --preset layered` template. Architecture styles
 can be combined: a modular monolith can use hexagonal boundaries inside each
 module, while one complex module can use CQRS or event sourcing.
 

@@ -8,7 +8,8 @@ nav_order: 2
 # Django Configuration Recipe
 
 This recipe treats Django models as persistence adapters and views as the
-interface layer. It is regular Deply configuration, not a built-in preset.
+interface layer. It is regular Deply configuration; `deply init --preset django`
+writes the same starting point.
 Adapt the directories and boundaries when the project uses Django Active
 Record models as its domain model.
 

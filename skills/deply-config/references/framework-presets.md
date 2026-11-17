@@ -2,6 +2,8 @@
 
 Apply only when imports, dependencies, or filenames show the framework is used.
 
+When `deply init --help` works on the installed CLI, start from `deply init --preset django|fastapi|flask` (or `layered`) and adapt the generated file; the snippets below describe the same collectors and rules.
+
 ## Django
 
 Common collectors:

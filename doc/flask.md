@@ -8,7 +8,8 @@ nav_order: 3
 # Flask Configuration Recipe
 
 This recipe treats routes, views, and blueprints as interface adapters. It is
-regular Deply configuration, not a built-in preset. Adapt the directories and
+regular Deply configuration; `deply init --preset flask` writes the same
+starting point. Adapt the directories and
 collectors to the conventions used by the project.
 
 The example assumes this structure:
