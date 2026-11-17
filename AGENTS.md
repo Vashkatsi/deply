@@ -6,7 +6,7 @@
 - Keep changes small, explicit, and scoped to the task. Do not edit unrelated code.
 
 ## Stack
-- Python package supporting Python 3.8 through 3.14.
+- Python package supporting Python 3.8 through 3.15.
 - Packaging: `setuptools`, `setup.py`, `MANIFEST.in`.
 - Runtime dependency: `PyYAML`.
 - Tests: `unittest` under `tests/`.

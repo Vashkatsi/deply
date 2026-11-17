@@ -44,7 +44,7 @@ deply analyze --config=deply.yaml
 Without `--config`, Deply uses `deply.yaml` if it exists, otherwise `pyproject.toml` when it contains a `[tool.deply]` table. An explicit `--config=pyproject.toml` works as well. See the [configuration guide](doc/configuration.md#using-pyprojecttoml) for details.
 
 In order to run Deply you need at least Python 3.8.
-Supported and tested versions: Python 3.8 to 3.14.
+Supported and tested versions: Python 3.8 to 3.15.
 
 ### Example Configuration
 
