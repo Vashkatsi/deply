@@ -29,7 +29,7 @@ source_paths = [
     "deply/utils/module_resolver.py",
     "deply/rules/",
 ]
-also_copy = ["deply/"]
+also_copy = ["deply/", ".pre-commit-hooks.yaml", "action.yml", "deply.yaml.example"]
 mutate_only_covered_lines = true
 pytest_add_cli_args = ["--timeout=5"]
 pytest_add_cli_args_test_selection = ["tests"]
