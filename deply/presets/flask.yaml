@@ -1,0 +1,53 @@
+deply:
+  paths:
+    - "."
+
+  exclude_files:
+    - '.*/\.venv/.*'
+    - '.*/tests?/.*'
+    - '.*/migrations/.*'
+
+  layers:
+    - name: domain
+      collectors:
+        - type: directory
+          directories:
+            - "src/app/domain"
+
+    - name: application
+      collectors:
+        - type: directory
+          directories:
+            - "src/app/application"
+
+    - name: infrastructure
+      collectors:
+        - type: directory
+          directories:
+            - "src/app/infrastructure"
+
+    - name: interface
+      collectors:
+        - type: bool
+          any_of:
+            - type: file_regex
+              regex: '.*/routes?\.py$|.*/views?\.py$|.*/blueprints?/.*\.py$'
+            - type: decorator_usage
+              decorator_regex: '.*\.route'
+
+  ruleset:
+    domain:
+      disallow_layer_dependencies:
+        - application
+        - infrastructure
+        - interface
+      disallow_external_imports:
+        - flask
+        - werkzeug
+        - sqlalchemy
+        - requests
+
+    application:
+      disallow_layer_dependencies:
+        - infrastructure
+        - interface

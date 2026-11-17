@@ -32,6 +32,7 @@ setup(
     ],
     package_dir={"": "."},
     packages=find_packages(),
+    package_data={"deply": ["presets/*.yaml"]},
     python_requires=">=3.8",
     install_requires=[
         "PyYAML>=5.1",

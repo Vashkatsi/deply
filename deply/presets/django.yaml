@@ -1,0 +1,56 @@
+deply:
+  paths:
+    - "."
+
+  exclude_files:
+    - '.*/\.venv/.*'
+    - '.*/tests?/.*'
+    - '.*/migrations/.*'
+
+  layers:
+    - name: domain
+      collectors:
+        - type: directory
+          directories:
+            - "src/app/domain"
+
+    - name: application
+      collectors:
+        - type: directory
+          directories:
+            - "src/app/application"
+
+    - name: infrastructure
+      collectors:
+        - type: bool
+          any_of:
+            - type: directory
+              directories:
+                - "src/app/infrastructure"
+            - type: class_inherits
+              base_class: "django.db.models.Model"
+            - type: class_inherits
+              base_class: "django.contrib.auth.models.AbstractUser"
+
+    - name: interface
+      collectors:
+        - type: file_regex
+          regex: '.*/views\.py$|.*/views/.*\.py$'
+
+  ruleset:
+    domain:
+      disallow_layer_dependencies:
+        - application
+        - infrastructure
+        - interface
+      disallow_external_imports:
+        - django
+        - rest_framework
+        - celery
+        - requests
+        - sqlalchemy
+
+    application:
+      disallow_layer_dependencies:
+        - infrastructure
+        - interface
