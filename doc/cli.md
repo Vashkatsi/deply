@@ -103,6 +103,83 @@ deply analyze --max-violations=5
 deply analyze --parallel
 ```
 
+## CI Integration
+
+The pre-commit hooks and the GitHub Action are available starting with Deply v1.3.2.
+
+### pre-commit
+
+```yaml
+repos:
+  - repo: https://github.com/Vashkatsi/deply
+    rev: v1.3.2
+    hooks:
+      - id: deply
+        args: [--config=deply.yaml, --baseline=deply-baseline.json]
+      - id: deply-validate
+        args: [--config=deply.yaml]
+```
+
+| Hook id | Command | Runs when |
+|---------|---------|-----------|
+| `deply` | `deply analyze` | Python files are staged |
+| `deply-validate` | `deply validate` | A file named `deply.yaml` or `deply.yml` is staged |
+
+Both hooks analyze the configured project, not the staged files: file names are not
+passed to Deply. Extra options go in `args`. If the configuration file has another
+name, override `files` for `deply-validate`, for example `files: '^architecture\.yaml$'`.
+pre-commit installs Deply from the hook repository at `rev`, so the hook version
+matches the tag.
+
+### GitHub Action
+
+```yaml
+jobs:
+  architecture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Vashkatsi/deply@v1.3.2
+        with:
+          config: deply.yaml
+          baseline: deply-baseline.json
+```
+
+The action is a composite action. It sets up Python, installs Deply from the action
+checkout, so the installed version matches the referenced ref, then runs
+`deply validate` followed by `deply analyze`.
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `config` | `deply.yaml` | Configuration file passed as `--config` to both commands |
+| `report-format` | `github-actions` | Report format for `deply analyze`; the default reports violations as annotations |
+| `baseline` | empty | When set, passes `--baseline=<path>` to `deply analyze` |
+| `args` | empty | Extra arguments appended to `deply analyze`, split on whitespace |
+| `python-version` | `3.x` | Python version for `actions/setup-python` |
+
+The action fails the job when validation fails or `deply analyze` exits with status `1`.
+To upload SARIF to GitHub Code Scanning instead of annotations, use the
+[SARIF upload recipe](#sarif-report).
+
+Reference the action by one of:
+
+- `@main`: the current default branch.
+- A release tag such as `@v1.3.2`: a fixed version.
+- `@v1`: a moving major-version tag, published starting with the next release.
+
+### Other CI systems
+
+Install Deply from PyPI and run it in any job with Python available. GitLab CI example:
+
+```yaml
+architecture:
+  image: python:3.12
+  script:
+    - pip install deply
+    - deply validate --config=deply.yaml
+    - deply analyze --config=deply.yaml
+```
+
 ## Context command
 
 Inspect one existing Python file before editing:

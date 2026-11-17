@@ -114,6 +114,38 @@ pairs, and stable violation fingerprints for agent integrations. See the
 Distinct dependencies and configured rules at the same location are now preserved
 in every report, so totals may increase compared with previously collapsed findings.
 
+## CI Integration
+
+Run Deply from pre-commit when Python files change:
+
+```yaml
+repos:
+  - repo: https://github.com/Vashkatsi/deply
+    rev: v1.3.2
+    hooks:
+      - id: deply
+        args: [--config=deply.yaml]
+```
+
+Run Deply in GitHub Actions with violations reported as annotations:
+
+```yaml
+- uses: actions/checkout@v4
+- uses: Vashkatsi/deply@v1.3.2
+  with:
+    config: deply.yaml
+```
+
+Other CI systems can install and run the CLI directly:
+
+```bash
+pip install deply
+deply analyze --config=deply.yaml
+```
+
+The pre-commit hooks and GitHub Action are available starting with Deply v1.3.2.
+See [CI integration](doc/cli.md#ci-integration) for hook ids, action inputs, and version tags.
+
 ## Violation Baseline
 
 Accept reviewed architecture debt once and fail only on new relationships:
@@ -172,6 +204,7 @@ See [Agent Skill](https://vashkatsi.github.io/deply/doc/skills.html) for install
 - **Mermaid Diagrams**: Visualize your architecture and dependencies with Mermaid diagrams.
 - **Error Suppression**: Suppress specific rule violations with inline comments.
 - **Config Validation**: Validate `deply.yaml` explicitly or automatically before analysis.
+- **CI Integration**: Run Deply through the provided pre-commit hooks or GitHub Action.
 - **SARIF Reports**: Export findings for GitHub Code Scanning with `deply analyze --report-format=sarif --output=deply.sarif`. See the [CLI guide](doc/cli.md#sarif-report) for upload instructions and limitations.
 - **Architecture Recipes**: Copy and adapt documented configurations for 21 architecture and application patterns; they are not built-in presets.
 
