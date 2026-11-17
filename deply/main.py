@@ -2,7 +2,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import yaml
 from deply import __version__
@@ -40,10 +40,14 @@ def validate_configuration(
             Path(output).write_text(report)
         else:
             print(report)
+    report_configuration_errors(errors)
+    return False
+
+
+def report_configuration_errors(errors: List[str]) -> None:
     print("Invalid deply configuration:", file=sys.stderr)
     for error in errors:
         print(f"- {error}", file=sys.stderr)
-    return False
 
 
 def initialize_configuration(preset: str, output: str, force: bool) -> bool:
@@ -51,9 +55,7 @@ def initialize_configuration(preset: str, output: str, force: bool) -> bool:
     content = preset_text(preset)
     errors = ConfigValidator(output_path).validate(yaml.safe_load(content)["deply"])
     if errors:
-        print("Invalid deply configuration:", file=sys.stderr)
-        for error in errors:
-            print(f"- {error}", file=sys.stderr)
+        report_configuration_errors(errors)
         return False
 
     try:
