@@ -281,7 +281,8 @@ jobs:
           git fetch --force --tags origin
           PROMOTED_RELEASE_TAG=""
           if git rev-parse -q --verify "refs/tags/${MAJOR_TAG}" > /dev/null; then
-            PROMOTED_RELEASE_TAG=$(git tag --points-at "refs/tags/${MAJOR_TAG}^{commit}" | grep -E "^${MAJOR_TAG}\.[0-9]+\.[0-9]+$" | sort -V | tail -n 1 || true)
+            PROMOTED_VERSION=$(git show "refs/tags/${MAJOR_TAG}^{commit}:deply/__init__.py" | sed -nE "s/^__version__ = '([^']+)'$/\1/p")
+            PROMOTED_RELEASE_TAG="v${PROMOTED_VERSION}"
           fi
           NEWEST_RELEASE_TAG=$(printf '%s\n' "${PROMOTED_RELEASE_TAG}" "${GITHUB_REF_NAME}" | sort -V | tail -n 1)
           if [[ "${NEWEST_RELEASE_TAG}" != "${GITHUB_REF_NAME}" || "${PROMOTED_RELEASE_TAG}" == "${GITHUB_REF_NAME}" ]]; then
