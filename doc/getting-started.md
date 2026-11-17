@@ -20,14 +20,17 @@ pip install deply
 
 After installation, you can start using Deply by following these steps:
 
-1. Create a configuration file named `deply.yaml` in your project root. On a
-   checkout/install that supports `deply init --help`, generate it from a packaged
-   preset (`layered`, `django`, `fastapi`, or `flask`) and adjust the layer
-   directories to your project:
+1. Create a configuration file named `deply.yaml` in your project root. Starting
+   with Deply v1.3.2, generate it from a packaged preset (`layered`, `django`,
+   `fastapi`, or `flask`) and adjust the layer directories to your project:
 
 ```bash
 deply init --preset fastapi
 ```
+
+   Until those directories match your layout, the first `deply analyze` exits `1`
+   with "no code elements mapped to configured layers" when nothing matches, or
+   passes with mostly empty layers when only a regex or decorator collector matches.
 
 2. Validate the configuration:
 

@@ -23,7 +23,7 @@ pip install deply
 
 Once you have installed Deply, you will need to create a configuration file, where you define your layers and communication ruleset. Deply reads it from `deply.yaml` in your project's root directory, or from a `[tool.deply]` table in `pyproject.toml` (Python 3.11+, available starting with Deply v1.3.2).
 
-On a checkout/install that supports `deply init --help`, write a validated starter file from a packaged preset instead of hand-writing it:
+Starting with Deply v1.3.2, write a validated starter file from a packaged preset instead of hand-writing it:
 
 ```bash
 deply init --list-presets
