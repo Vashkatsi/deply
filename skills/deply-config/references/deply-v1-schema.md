@@ -1,4 +1,4 @@
-# Deply v1.3.2 Schema Reference
+# Deply v1.3.3 Schema Reference
 
 Use this as the source of truth for generated `deply.yaml` files and `[tool.deply]` tables in `pyproject.toml`.
 

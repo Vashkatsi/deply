@@ -167,7 +167,7 @@ Run Deply from pre-commit when Python files change:
 ```yaml
 repos:
   - repo: https://github.com/Vashkatsi/deply
-    rev: v1.3.2
+    rev: v1.3.3
     hooks:
       - id: deply
         args: [--config=deply.yaml]
