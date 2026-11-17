@@ -239,6 +239,7 @@ Use the following commands for local quality checks:
 ```bash
 make check
 make test
+make architecture
 make mutation
 make lint
 make typing

@@ -16,6 +16,7 @@
 - Setup: `python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt -r requirements-dev.txt`
 - Full local check: `make check`
 - Tests: `make test`
+- Architecture self-check: `make architecture`
 - Lint: `make lint`
 - Typing: `make typing`
 - Security: `make security`

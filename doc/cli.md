@@ -165,7 +165,6 @@ Reference the action by one of:
 
 - `@main`: the current default branch.
 - A release tag such as `@v1.3.2`: a fixed version.
-- `@v1`: a moving major-version tag, published starting with the next release.
 
 ### Other CI systems
 
