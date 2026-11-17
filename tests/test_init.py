@@ -63,6 +63,13 @@ class TestInitCommand(unittest.TestCase):
                          ["domain", "application", "infrastructure", "interface"])
         self.assertEqual(run_cli("validate")[0], 0)
 
+    def test_every_preset_round_trips_through_init(self):
+        for name in available_presets():
+            with self.subTest(preset=name):
+                output_path = self.root / f"{name}.yaml"
+                self.assertEqual(run_cli("init", "--preset", name, "--output", str(output_path))[0], 0)
+                self.assertEqual(yaml.safe_load(output_path.read_text()), render_preset(name, ["."]))
+
     def test_init_refuses_to_overwrite_without_force(self):
         existing = self.root / "deply.yaml"
         existing.write_text("deply: {}\n")
@@ -98,7 +105,7 @@ class TestInitCommand(unittest.TestCase):
     def test_init_fails_when_output_directory_is_missing(self):
         exit_code, _, error = run_cli("init", "--preset", "flask", "--output", "missing/deply.yaml")
         self.assertEqual(exit_code, 1)
-        self.assertIn("missing/deply.yaml", error)
+        self.assertIn(str(Path("missing") / "deply.yaml"), error)
 
     def test_list_presets_prints_names_without_writing(self):
         exit_code, output, _ = run_cli("init", "--list-presets")
