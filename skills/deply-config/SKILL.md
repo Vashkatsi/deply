@@ -33,7 +33,7 @@ Use this skill to create or audit a production-ready `deply.yaml` for a Python p
    - `references/violation-triage.md` when `deply analyze` reports violations.
    - `references/ci-and-docs.md` when adding Makefile, CI, or documentation changes.
 4. Choose the mode:
-   - Create/update mode: generate or improve `deply.yaml` with public root key `deply:`. When no `deply.yaml` exists, check `deply init --help`. If supported and a packaged preset (`layered`, `django`, `fastapi`, `flask`) matches the discovered framework or layering, run `deply init --preset <name>` instead of hand-writing YAML, then adapt layer directories and rules to the repository (`directory` collectors resolve relative to `paths`, so `--paths` also requires rewriting the layer directories). Hand-write the config only on older CLIs or when no preset fits.
+   - Create/update mode: generate or improve `deply.yaml` with public root key `deply:`. When no `deply.yaml` exists, check `deply init --help`. If supported and a packaged preset (`layered`, `django`, `fastapi`, `flask`) matches the discovered framework or layering, run `deply init --preset <name>` instead of hand-writing YAML, then adapt layer directories and rules to the repository. Hand-write the config only on older CLIs or when no preset fits.
    - Audit mode: review existing config, CI, docs, and suppressions before proposing changes.
 5. Run `deply validate --config=deply.yaml` from the project root.
 6. Run `deply analyze --parallel --config=deply.yaml` from the project root.

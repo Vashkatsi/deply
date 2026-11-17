@@ -11,7 +11,7 @@ import yaml
 
 from deply.config_validator import ConfigValidator
 from deply.main import main
-from deply.presets import PRESETS_DIRECTORY, available_presets, render_preset
+from deply.presets import PRESETS_DIRECTORY, available_presets, preset_text
 
 EXPECTED_PRESETS = ["django", "fastapi", "flask", "layered"]
 
@@ -35,14 +35,6 @@ class TestPresets(unittest.TestCase):
                 self.assertEqual(config["deply"]["paths"], ["."])
                 self.assertEqual(ConfigValidator(preset_path).validate(config["deply"]), [])
 
-    def test_render_preset_replaces_only_paths(self):
-        rendered = render_preset("fastapi", ["src"])
-        original = yaml.safe_load((PRESETS_DIRECTORY / "fastapi.yaml").read_text())["deply"]
-        self.assertEqual(rendered["deply"]["paths"], ["src"])
-        self.assertEqual(rendered["deply"]["layers"], original["layers"])
-        self.assertEqual(rendered["deply"]["ruleset"], original["ruleset"])
-        self.assertEqual(list(rendered["deply"]), list(original))
-
 
 class TestInitCommand(unittest.TestCase):
     def setUp(self):
@@ -64,12 +56,12 @@ class TestInitCommand(unittest.TestCase):
                          ["domain", "application", "infrastructure", "interface"])
         self.assertEqual(run_cli("validate")[0], 0)
 
-    def test_every_preset_round_trips_through_init(self):
+    def test_every_preset_is_written_verbatim(self):
         for name in available_presets():
             with self.subTest(preset=name):
                 output_path = self.root / f"{name}.yaml"
                 self.assertEqual(run_cli("init", "--preset", name, "--output", str(output_path))[0], 0)
-                self.assertEqual(yaml.safe_load(output_path.read_text()), render_preset(name, ["."]))
+                self.assertEqual(output_path.read_text(), preset_text(name))
 
     def test_init_preset_excludes_root_level_virtualenv_tests_and_migrations(self):
         (self.root / "src" / "app" / "domain").mkdir(parents=True)
@@ -100,21 +92,12 @@ class TestInitCommand(unittest.TestCase):
         written = yaml.safe_load((self.root / "deply.yaml").read_text())
         self.assertEqual(written["deply"]["layers"][0]["name"], "presentation")
 
-    def test_init_honours_output_and_paths(self):
-        (self.root / "src").mkdir()
+    def test_init_honours_output(self):
         output_path = self.root / "config" / "architecture.yaml"
         output_path.parent.mkdir()
-        exit_code, _, _ = run_cli("init", "--preset", "django", "--output", str(output_path), "--paths", "src")
+        exit_code, _, _ = run_cli("init", "--preset", "django", "--output", str(output_path))
         self.assertEqual(exit_code, 0)
-        written = yaml.safe_load(output_path.read_text())
-        self.assertEqual(written["deply"]["paths"], ["src"])
         self.assertEqual(run_cli("validate", "--config", str(output_path))[0], 0)
-
-    def test_init_rejects_missing_paths_without_writing(self):
-        exit_code, _, error = run_cli("init", "--preset", "flask", "--paths", "missing")
-        self.assertEqual(exit_code, 1)
-        self.assertIn("paths[0]: path does not exist: missing", error)
-        self.assertFalse((self.root / "deply.yaml").exists())
 
     def test_init_fails_when_output_directory_is_missing(self):
         exit_code, _, error = run_cli("init", "--preset", "flask", "--output", "missing/deply.yaml")

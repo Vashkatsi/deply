@@ -2,14 +2,14 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import yaml
 from deply import __version__
 from deply.config_parser import ConfigParser, discover_config_path
 from deply.config_validator import ConfigValidator
 from deply.deply_runner import DeplyRunner
-from deply.presets import available_presets, dump_configuration, render_preset
+from deply.presets import available_presets, preset_text
 from deply.reports.report_generator import ReportGenerator
 
 CONFIG_HELP = "Path to the configuration file; defaults to deply.yaml, then pyproject.toml [tool.deply]"
@@ -46,17 +46,16 @@ def validate_configuration(
     return False
 
 
-def initialize_configuration(preset: str, output: str, paths: List[str], force: bool) -> bool:
+def initialize_configuration(preset: str, output: str, force: bool) -> bool:
     output_path = Path(output)
-    config = render_preset(preset, paths)
-    errors = ConfigValidator(output_path).validate(config["deply"])
+    content = preset_text(preset)
+    errors = ConfigValidator(output_path).validate(yaml.safe_load(content)["deply"])
     if errors:
         print("Invalid deply configuration:", file=sys.stderr)
         for error in errors:
             print(f"- {error}", file=sys.stderr)
         return False
 
-    content = dump_configuration(config)
     try:
         with output_path.open("w" if force else "x") as output_file:
             output_file.write(content)
@@ -123,7 +122,6 @@ def main():
     init_selection.add_argument('--preset', choices=available_presets(), help='Preset to write')
     init_selection.add_argument('--list-presets', action='store_true', help='List available presets and exit')
     parser_init.add_argument('--output', default='deply.yaml', help='Configuration file to create')
-    parser_init.add_argument('--paths', nargs='+', default=['.'], help='Analysis paths written to the configuration')
     parser_init.add_argument('--force', action='store_true', help='Overwrite an existing configuration file')
     # pragma: no mutate end
 
@@ -155,7 +153,7 @@ def main():
         if args.list_presets:
             print("\n".join(available_presets()))
             sys.exit(0)
-        sys.exit(0 if initialize_configuration(args.preset, args.output, args.paths, args.force) else 1)
+        sys.exit(0 if initialize_configuration(args.preset, args.output, args.force) else 1)
 
     if args.command == "validate":
         sys.exit(0 if validate_configuration(args.config) else 1)
